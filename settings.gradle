@@ -9,6 +9,21 @@ plugins {
     id 'io.micronaut.build.shared.settings' version '4.2.3'
 }
 
-rootProject.name = 'xxx-parent'
+enableFeaturePreview("VERSION_CATALOGS")
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
-include 'xxx'
+rootProject.name = 'toml-parent'
+
+include 'toml'
+
+def micronautVersion = providers.gradleProperty("micronautVersion")
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
+    }
+    versionCatalogs {
+        create("mn") {
+            from("io.micronaut:micronaut-bom:${micronautVersion.get()}")
+        }
+    }
+}
