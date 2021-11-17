@@ -1,43 +1,44 @@
 package io.micronaut.toml;
 
-import com.fasterxml.jackson.core.JsonLocation;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.exc.StreamReadException;
-import com.fasterxml.jackson.core.io.ContentReference;
-import com.fasterxml.jackson.core.util.RequestPayload;
+import io.micronaut.core.annotation.Internal;
 
+import java.io.IOException;
+
+@Internal
 public class TomlStreamReadException
-    extends StreamReadException
-{
-    private static final long serialVersionUID = 1L;
+        extends IOException {
+    private final TomlLocation loc;
 
-    TomlStreamReadException(JsonParser p, String msg, JsonLocation loc) {
-        super(p, msg, loc);
+    TomlStreamReadException(String msg, TomlLocation loc) {
+        super(msg);
+        this.loc = loc;
     }
 
-    TomlStreamReadException(JsonParser p, String msg, JsonLocation loc, Throwable rootCause) {
-        super(p, msg, loc, rootCause);
-    }
-
-    @Override
-    public TomlStreamReadException withParser(JsonParser p) {
-        this._processor = p;
-        return this;
+    TomlStreamReadException(String msg, TomlLocation loc, Throwable rootCause) {
+        super(msg, rootCause);
+        this.loc = loc;
     }
 
     @Override
-    public TomlStreamReadException withRequestPayload(RequestPayload p) {
-        this._requestPayload = p;
-        return this;
+    public String getMessage() {
+        // adapted from jackson JsonProcessingException
+        String msg = super.getMessage();
+        if (msg == null) {
+            msg = "N/A";
+        }
+        if (loc != null) {
+            StringBuilder sb = new StringBuilder(100);
+            sb.append(msg);
+            sb.append('\n');
+            sb.append(" at ");
+            sb.append(loc);
+            msg = sb.toString();
+        }
+        return msg;
     }
 
     static class ErrorContext {
-        final ContentReference contentReference;
-        final JsonParser parser;
-
-        ErrorContext(ContentReference contentReference, JsonParser parser) {
-            this.contentReference = contentReference;
-            this.parser = parser;
+        ErrorContext() {
         }
 
         ErrorBuilder atPosition(Lexer lexer) {
@@ -45,12 +46,10 @@ public class TomlStreamReadException
         }
 
         class ErrorBuilder {
-            private final JsonLocation location;
+            private final TomlLocation location;
 
             ErrorBuilder(Lexer lexer) {
-                this.location = new JsonLocation(
-                        contentReference,
-                        -1,
+                this.location = new TomlLocation(
                         lexer.getCharPos(),
                         lexer.getLine() + 1,
                         lexer.getColumn() + 1
@@ -59,20 +58,30 @@ public class TomlStreamReadException
 
             TomlStreamReadException unexpectedToken(TomlToken actual, String expected) {
                 return new TomlStreamReadException(
-                        parser,
                         "Unexpected token: Got " + actual + ", expected " + expected,
                         location
                 );
             }
 
             TomlStreamReadException generic(String message) {
-                return new TomlStreamReadException(parser, message, location);
+                return new TomlStreamReadException(message, location);
             }
 
             TomlStreamReadException outOfBounds(NumberFormatException cause) {
-                return new TomlStreamReadException(parser,
-                        "Number out of bounds", location, cause);
+                return new TomlStreamReadException("Number out of bounds", location, cause);
             }
+        }
+    }
+
+    private static class TomlLocation {
+        final long charPosition;
+        final int line; // 1-based
+        final int column; // 1-based
+
+        TomlLocation(long charPosition, int line, int column) {
+            this.charPosition = charPosition;
+            this.line = line;
+            this.column = column;
         }
     }
 }

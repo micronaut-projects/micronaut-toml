@@ -157,7 +157,6 @@
    * Resets the input position.
    */
   private final void yyResetPosition() {
-      zzAtBOL  = true;
       zzAtEOF  = false;
       zzCurrentPos = 0;
       zzMarkedPos = 0;

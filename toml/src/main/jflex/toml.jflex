@@ -1,4 +1,4 @@
-package com.fasterxml.jackson.dataformat.toml;
+package io.micronaut.toml;
 
 %%
 
@@ -10,53 +10,39 @@ package com.fasterxml.jackson.dataformat.toml;
 %char
 %buffer 4000
 
-%ctorarg com.fasterxml.jackson.core.io.IOContext ioContext
 %ctorarg TomlStreamReadException.ErrorContext errorContext
 
 %init{
-this.ioContext = ioContext;
 this.errorContext = errorContext;
 yybegin(EXPECT_EXPRESSION);
-this.zzBuffer = ioContext.allocTokenBuffer();
-this.textBuffer = ioContext.constructTextBuffer();
+this.textBuffer = new StringBuilder();
 %init}
 
 %{
-  private final com.fasterxml.jackson.core.io.IOContext ioContext;
   private final TomlStreamReadException.ErrorContext errorContext;
 
   boolean prohibitInternalBufferAllocate = false;
-  private boolean releaseTokenBuffer = true;
 
   private boolean trimmedNewline;
-  final com.fasterxml.jackson.core.util.TextBuffer textBuffer;
+  final StringBuilder textBuffer;
+
+  /** Number of newlines encountered up to the start of the matched text. */
+  private int yyline;
+
+  /** Number of characters from the last newline up to the start of the matched text. */
+  private int yycolumn;
+
+  /** Number of characters up to the start of the matched text. */
+  private long yychar;
 
   private void requestLargerBuffer() throws TomlStreamReadException {
       if (prohibitInternalBufferAllocate) {
           throw errorContext.atPosition(this).generic("Token too long, but buffer resizing prohibited");
       }
-
-      // todo: use recycler
-      char[] newBuffer = new char[zzBuffer.length * 2];
-      System.arraycopy(zzBuffer, 0, newBuffer, 0, zzBuffer.length);
-      if (releaseTokenBuffer) {
-          ioContext.releaseTokenBuffer(zzBuffer);
-          releaseTokenBuffer = false;
-      }
-      zzBuffer = newBuffer;
-  }
-
-  public void releaseBuffers() {
-      if (releaseTokenBuffer) {
-          ioContext.releaseTokenBuffer(zzBuffer);
-          zzBuffer = null;
-      }
-      textBuffer.releaseBuffers();
   }
 
   private void startString() {
-      // resetWithEmpty does not set _currentSegment, so we need this variant to be able to append further data
-      textBuffer.emptyAndGetCurrentSegment();
+      textBuffer.setLength(0);
       trimmedNewline = false;
   }
 
@@ -66,7 +52,7 @@ this.textBuffer = ioContext.constructTextBuffer();
   }
 
   private void appendNewlineWithPossibleTrim() {
-      if (!trimmedNewline && textBuffer.size() == 0) {
+      if (!trimmedNewline && textBuffer.length() == 0) {
           trimmedNewline = true;
       } else {
           // \n or \r\n todo: "TOML parsers should feel free to normalize newline to whatever makes sense for their platform."
@@ -108,7 +94,7 @@ this.textBuffer = ioContext.constructTextBuffer();
   int getColumn() { return yycolumn; }
   long getCharPos() { return yychar; }
 
-  char[] getTextBuffer() { return zzBuffer; };
+  CharSequence getTextBuffer() { return zzBuffer; };
   int getTextBufferStart() { return zzStartRead; };
   int getTextBufferEnd() { return zzMarkedPos; };
 %}

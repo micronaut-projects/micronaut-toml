@@ -1,26 +1,19 @@
 package io.micronaut.toml;
 
-import com.fasterxml.jackson.core.io.IOContext;
-import com.fasterxml.jackson.core.io.NumberInput;
-import com.fasterxml.jackson.core.util.VersionUtil;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.micronaut.core.annotation.Nullable;
+import io.micronaut.json.tree.JsonNode;
 
 import java.io.IOException;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.OffsetDateTime;
-import java.time.temporal.Temporal;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 class Parser {
-    private static final JsonNodeFactory factory = new JsonNodeFactoryImpl();
-
     private final TomlStreamReadException.ErrorContext errorContext;
     private final int options;
     private final Lexer lexer;
@@ -28,27 +21,23 @@ class Parser {
     private TomlToken next;
 
     private Parser(
-            IOContext ioContext,
             TomlStreamReadException.ErrorContext errorContext,
             int options,
             Reader reader
     ) throws IOException {
         this.errorContext = errorContext;
         this.options = options;
-        this.lexer = new Lexer(reader, ioContext, errorContext);
-        lexer.prohibitInternalBufferAllocate = (options & TomlWriteFeature.INTERNAL_PROHIBIT_INTERNAL_BUFFER_ALLOCATE) != 0;
+        this.lexer = new Lexer(reader, errorContext);
+        lexer.prohibitInternalBufferAllocate = false;
         this.next = lexer.yylex();
     }
 
-    public static ObjectNode parse(
-            IOContext ioContext,
+    public static JsonNode parse(
             int options,
             Reader reader
     ) throws IOException {
-        Parser parser = new Parser(ioContext, new TomlStreamReadException.ErrorContext(ioContext.contentReference(), null), options, reader);
-        ObjectNode node = parser.parse();
-        parser.lexer.releaseBuffers();
-        return node;
+        Parser parser = new Parser(new TomlStreamReadException.ErrorContext(), options, reader);
+        return parser.parse();
     }
 
     private TomlToken peek() throws TomlStreamReadException {
@@ -74,9 +63,9 @@ class Parser {
         }
     }
 
-    public ObjectNode parse() throws IOException {
-        TomlObjectNode root = (TomlObjectNode) factory.objectNode();
-        TomlObjectNode currentTable = root;
+    public JsonNode parse() throws IOException {
+        TomlObjectBuilder root = new TomlObjectBuilder();
+        TomlObjectBuilder currentTable = root;
         while (next != null) {
             TomlToken token = peek();
             if (token == TomlToken.UNQUOTED_KEY || token == TomlToken.STRING) {
@@ -93,29 +82,28 @@ class Parser {
             } else if (token == TomlToken.ARRAY_TABLE_OPEN) {
                 pollExpected(TomlToken.ARRAY_TABLE_OPEN, Lexer.EXPECT_INLINE_KEY);
                 FieldRef fieldRef = parseAndEnterKey(root, true);
-                TomlArrayNode array = getOrCreateArray(fieldRef.object, fieldRef.key);
+                TomlArrayBuilder array = getOrCreateArray(fieldRef.object, fieldRef.key);
                 if (array.closed) {
                     throw errorContext.atPosition(lexer).generic("Array already finished");
                 }
-                currentTable = (TomlObjectNode) array.addObject();
+                currentTable = array.addObject();
                 pollExpected(TomlToken.ARRAY_TABLE_CLOSE, Lexer.EXPECT_EOL);
             } else {
                 throw errorContext.atPosition(lexer).unexpectedToken(token, "key or table");
             }
         }
-        assert lexer.yyatEOF();
         int eofState = lexer.yystate();
         if (eofState != Lexer.EXPECT_EXPRESSION && eofState != Lexer.EXPECT_EOL) {
             throw errorContext.atPosition(lexer).generic("EOF in wrong state");
         }
-        return root;
+        return root.build();
     }
 
     private FieldRef parseAndEnterKey(
-            TomlObjectNode outer,
+            TomlObjectBuilder outer,
             boolean forTable
     ) throws IOException {
-        TomlObjectNode node = outer;
+        TomlObjectBuilder node = outer;
         while (true) {
             if (node.closed) {
                 throw errorContext.atPosition(lexer).generic("Object already closed");
@@ -129,9 +117,9 @@ class Parser {
             TomlToken partToken = peek();
             String part;
             if (partToken == TomlToken.STRING) {
-                part = lexer.textBuffer.contentsAsString();
+                part = lexer.textBuffer.toString();
             } else if (partToken == TomlToken.UNQUOTED_KEY) {
-                part = lexer.yytext();
+                part = lexer.yytext().toString();
             } else {
                 throw errorContext.atPosition(lexer).unexpectedToken(partToken, "quoted or unquoted key");
             }
@@ -141,12 +129,12 @@ class Parser {
             }
             pollExpected(TomlToken.DOT_SEP, Lexer.EXPECT_INLINE_KEY);
 
-            JsonNode existing = node.get(part);
+            TomlNodeBuilder existing = node.get(part);
             if (existing == null) {
-                node = (TomlObjectNode) node.putObject(part);
-            } else if (existing.isObject()) {
-                node = (TomlObjectNode) existing;
-            } else if (existing.isArray()) {
+                node = (TomlObjectBuilder) node.putObject(part);
+            } else if (existing instanceof TomlObjectBuilder) {
+                node = (TomlObjectBuilder) existing;
+            } else if (existing instanceof TomlArrayBuilder) {
                 /* "Any reference to an array of tables points to the most recently defined table element of the array.
                  * This allows you to define sub-tables, and even sub-arrays of tables, inside the most recent table."
                  *
@@ -154,40 +142,40 @@ class Parser {
                  * in between, and I accept them for simple dotted keys as well (not just for tables). These cases don't
                  * seem to be covered by the specification.
                  */
-                TomlArrayNode array = (TomlArrayNode) existing;
+                TomlArrayBuilder array = (TomlArrayBuilder) existing;
                 if (array.closed) {
                     throw errorContext.atPosition(lexer).generic("Array already closed");
                 }
                 // Only arrays declared by array tables are not closed, and those are always arrays of objects.
-                node = (TomlObjectNode) array.get(array.size() - 1);
+                node = (TomlObjectBuilder) array.get(array.size() - 1);
             } else {
                 throw errorContext.atPosition(lexer).generic("Path into existing non-object value of type " + existing.getNodeType());
             }
         }
     }
 
-    private JsonNode parseValue(int nextState) throws IOException {
+    private TomlNodeBuilder parseValue(int nextState) throws IOException {
         TomlToken firstToken = peek();
         switch (firstToken) {
             case STRING:
-                String text = lexer.textBuffer.contentsAsString();
+                String text = lexer.textBuffer.toString();
                 pollExpected(TomlToken.STRING, nextState);
-                return factory.textNode(text);
+                return new Scalar(JsonNode.createStringNode(text));
             case TRUE:
                 pollExpected(TomlToken.TRUE, nextState);
-                return factory.booleanNode(true);
+                return new Scalar(JsonNode.createBooleanNode(true));
             case FALSE:
                 pollExpected(TomlToken.FALSE, nextState);
-                return factory.booleanNode(false);
+                return new Scalar(JsonNode.createBooleanNode(false));
             case OFFSET_DATE_TIME:
             case LOCAL_DATE_TIME:
             case LOCAL_DATE:
             case LOCAL_TIME:
-                return parseDateTime(nextState);
+                return new Scalar(parseDateTime(nextState));
             case FLOAT:
-                return parseFloat(nextState);
+                return new Scalar(parseFloat(nextState));
             case INTEGER:
-                return parseInt(nextState);
+                return new Scalar(parseInt(nextState));
             case ARRAY_OPEN:
                 return parseArray(nextState);
             case INLINE_TABLE_OPEN:
@@ -198,13 +186,14 @@ class Parser {
     }
 
     private JsonNode parseDateTime(int nextState) throws IOException {
-        String text = lexer.yytext();
+        String text = lexer.yytext().toString();
         TomlToken token = poll(nextState);
         // the time-delim index can be [Tt ]. java.time supports only [Tt]
         if ((token == TomlToken.LOCAL_DATE_TIME || token == TomlToken.OFFSET_DATE_TIME) && text.charAt(10) == ' ') {
             text = text.substring(0, 10) + 'T' + text.substring(11);
         }
 
+        /*
         if (TomlReadFeature.PARSE_JAVA_TIME.enabledIn(options)) {
             Temporal value;
             if (token == TomlToken.LOCAL_DATE) {
@@ -223,114 +212,121 @@ class Parser {
             }
             return factory.pojoNode(value);
         } else {
-            return factory.textNode(text);
-        }
+
+         */
+        return JsonNode.createStringNode(text);
+        //}
     }
 
     private JsonNode parseInt(int nextState) throws IOException {
-        char[] buffer = lexer.getTextBuffer();
+        CharSequence buffer = lexer.getTextBuffer();
         int start = lexer.getTextBufferStart();
         int length = lexer.getTextBufferEnd() - lexer.getTextBufferStart();
         for (int i = 0; i < length; i++) {
-            if (buffer[start + i] == '_') {
+            if (buffer.charAt(start + i) == '_') {
                 // slow path to remove underscores
-                buffer = new String(buffer, start, length).replace("_", "").toCharArray();
+                buffer = buffer.toString().substring(start, length).replace("_", "");
                 start = 0;
-                length = buffer.length;
+                length = buffer.length();
                 break;
             }
         }
 
         pollExpected(TomlToken.INTEGER, nextState);
         if (length > 2) {
-            char baseChar = buffer[start + 1];
+            char baseChar = buffer.charAt(start + 1);
             if (baseChar == 'x' || baseChar == 'o' || baseChar == 'b') {
                 start += 2;
                 length -= 2;
-                String text = new String(buffer, start, length);
+                String text = buffer.toString().substring(start, length);
                 // note: we parse all these as unsigned. Hence the weird int limits.
                 // hex
                 if (baseChar == 'x') {
                     if (length <= 31 / 4) {
-                        return factory.numberNode(Integer.parseInt(text, 16));
+                        return JsonNode.createNumberNode(Integer.parseInt(text, 16));
                     } else if (length <= 63 / 4) {
-                        return factory.numberNode(Long.parseLong(text, 16));
+                        return JsonNode.createNumberNode(Long.parseLong(text, 16));
                     } else {
-                        return factory.numberNode(new BigInteger(text, 16));
+                        return JsonNode.createNumberNode(new BigInteger(text, 16));
                     }
                 }
                 // octal
                 if (baseChar == 'o') {
                     // this is a bit conservative, but who uses octal anyway?
                     if (length <= 31 / 3) {
-                        return factory.numberNode(Integer.parseInt(text, 8));
+                        return JsonNode.createNumberNode(Integer.parseInt(text, 8));
                     } else if (text.length() <= 63 / 3) {
-                        return factory.numberNode(Long.parseLong(text, 8));
+                        return JsonNode.createNumberNode(Long.parseLong(text, 8));
                     } else {
-                        return factory.numberNode(new BigInteger(text, 8));
+                        return JsonNode.createNumberNode(new BigInteger(text, 8));
                     }
                 }
                 // binary
                 assert baseChar == 'b';
                 if (length <= 31) {
-                    return factory.numberNode(Integer.parseUnsignedInt(text, 2));
+                    return JsonNode.createNumberNode(Integer.parseUnsignedInt(text, 2));
                 } else if (length <= 63) {
-                    return factory.numberNode(Long.parseUnsignedLong(text, 2));
+                    return JsonNode.createNumberNode(Long.parseUnsignedLong(text, 2));
                 } else {
-                    return factory.numberNode(new BigInteger(text, 2));
+                    return JsonNode.createNumberNode(new BigInteger(text, 2));
                 }
             }
         }
         // decimal
         boolean negative;
-        if (buffer[start] == '-') {
+        if (buffer.charAt(start) == '-') {
             start++;
             length--;
             negative = true;
-        } else if (buffer[start] == '+') {
+        } else if (buffer.charAt(start) == '+') {
             start++;
             length--;
             negative = false;
         } else {
             negative = false;
         }
+        String bufferString = buffer.toString().substring(start, length);
         // adapted from JsonParserBase
         if (length <= 9) {
-            int v = NumberInput.parseInt(buffer, start, length);
-            if (negative) v = -v;
-            return factory.numberNode(v);
+            int v = Integer.parseInt(bufferString);
+            if (negative) {
+                v = -v;
+            }
+            return JsonNode.createNumberNode(v);
         }
-        if (length <= 18 || NumberInput.inLongRange(buffer, start, length, negative)) {
-            long v = NumberInput.parseLong(buffer, start, length);
-            if (negative) v = -v;
+        if (length <= 18) {
+            long v = Long.parseLong(bufferString);
+            if (negative) {
+                v = -v;
+            }
             // Might still fit in int, need to check
             if ((int) v == v) {
-                return factory.numberNode((int) v);
+                return JsonNode.createNumberNode((int) v);
             } else {
-                return factory.numberNode(v);
+                return JsonNode.createNumberNode(v);
             }
         }
-        return factory.numberNode(new BigInteger(new String(buffer, start, length)));
+        return JsonNode.createNumberNode(new BigInteger(bufferString));
     }
 
     private JsonNode parseFloat(int nextState) throws IOException {
-        String text = lexer.yytext().replace("_", "");
+        String text = lexer.yytext().toString().replace("_", "");
         pollExpected(TomlToken.FLOAT, nextState);
         if (text.endsWith("nan")) {
-            return factory.numberNode(Double.NaN);
+            return JsonNode.createNumberNode(Double.NaN);
         } else if (text.endsWith("inf")) {
-            return factory.numberNode(text.startsWith("-") ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY);
+            return JsonNode.createNumberNode(text.startsWith("-") ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY);
         } else {
             BigDecimal dec = new BigDecimal(text);
-            return factory.numberNode(dec);
+            return JsonNode.createNumberNode(dec);
         }
     }
 
-    private ObjectNode parseInlineTable(int nextState) throws IOException {
+    private TomlObjectBuilder parseInlineTable(int nextState) throws IOException {
         // inline-table = inline-table-open [ inline-table-keyvals ] inline-table-close
         // inline-table-keyvals = keyval [ inline-table-sep inline-table-keyvals ]
         pollExpected(TomlToken.INLINE_TABLE_OPEN, Lexer.EXPECT_INLINE_KEY);
-        TomlObjectNode node = (TomlObjectNode) factory.objectNode();
+        TomlObjectBuilder node = new TomlObjectBuilder();
         while (true) {
             TomlToken token = peek();
             if (token == TomlToken.INLINE_TABLE_CLOSE) {
@@ -358,18 +354,18 @@ class Parser {
         return node;
     }
 
-    private ArrayNode parseArray(int nextState) throws IOException {
+    private TomlArrayBuilder parseArray(int nextState) throws IOException {
         // array = array-open [ array-values ] ws-comment-newline array-close
         // array-values =  ws-comment-newline val ws-comment-newline array-sep array-values
         // array-values =/ ws-comment-newline val ws-comment-newline [ array-sep ]
         pollExpected(TomlToken.ARRAY_OPEN, Lexer.EXPECT_VALUE);
-        TomlArrayNode node = (TomlArrayNode) factory.arrayNode();
+        TomlArrayBuilder node = new TomlArrayBuilder();
         while (true) {
             TomlToken token = peek();
             if (token == TomlToken.ARRAY_CLOSE) {
                 break;
             }
-            JsonNode value = parseValue(Lexer.EXPECT_ARRAY_SEP);
+            TomlNodeBuilder value = parseValue(Lexer.EXPECT_ARRAY_SEP);
             node.add(value);
             TomlToken sepToken = peek();
             if (sepToken == TomlToken.ARRAY_CLOSE) {
@@ -385,91 +381,157 @@ class Parser {
         return node;
     }
 
-    private void parseKeyVal(TomlObjectNode target, int nextState) throws IOException {
+    private void parseKeyVal(TomlObjectBuilder target, int nextState) throws IOException {
         // keyval = key keyval-sep val
         FieldRef fieldRef = parseAndEnterKey(target, false);
         pollExpected(TomlToken.KEY_VAL_SEP, Lexer.EXPECT_VALUE);
-        JsonNode value = parseValue(nextState);
+        TomlNodeBuilder value = parseValue(nextState);
         if (fieldRef.object.has(fieldRef.key)) {
             throw errorContext.atPosition(lexer).generic("Duplicate key");
         }
         fieldRef.object.set(fieldRef.key, value);
     }
 
-    private TomlObjectNode getOrCreateObject(ObjectNode node, String field) throws TomlStreamReadException {
-        JsonNode existing = node.get(field);
+    private TomlObjectBuilder getOrCreateObject(TomlObjectBuilder node, String field) throws TomlStreamReadException {
+        TomlNodeBuilder existing = node.get(field);
         if (existing == null) {
-            return (TomlObjectNode) node.putObject(field);
-        } else if (existing.isObject()) {
-            return (TomlObjectNode) existing;
+            return node.putObject(field);
+        } else if (existing instanceof TomlObjectBuilder) {
+            return (TomlObjectBuilder) existing;
         } else {
             throw errorContext.atPosition(lexer).generic("Path into existing non-object value of type " + existing.getNodeType());
         }
     }
 
-    private TomlArrayNode getOrCreateArray(ObjectNode node, String field) throws TomlStreamReadException {
-        JsonNode existing = node.get(field);
+    private TomlArrayBuilder getOrCreateArray(TomlObjectBuilder node, String field) throws TomlStreamReadException {
+        TomlNodeBuilder existing = node.get(field);
         if (existing == null) {
-            return (TomlArrayNode) node.putArray(field);
-        } else if (existing.isArray()) {
-            return (TomlArrayNode) existing;
+            return (TomlArrayBuilder) node.putArray(field);
+        } else if (existing instanceof TomlArrayBuilder) {
+            return (TomlArrayBuilder) existing;
         } else {
             throw errorContext.atPosition(lexer).generic("Path into existing non-array value of type " + node.getNodeType());
         }
     }
 
     private static class FieldRef {
-        final TomlObjectNode object;
+        final TomlObjectBuilder object;
         final String key;
 
-        FieldRef(TomlObjectNode object, String key) {
+        FieldRef(TomlObjectBuilder object, String key) {
             this.object = object;
             this.key = key;
         }
     }
 
-    @SuppressWarnings("serial") // only used internally, no need to be JDK serializable
-    private static class TomlObjectNode extends ObjectNode {
+    private interface TomlNodeBuilder {
+        JsonNode build();
+
+        String getNodeType();
+    }
+
+    private static class Scalar implements TomlNodeBuilder {
+        private final JsonNode value;
+
+        Scalar(JsonNode value) {
+            this.value = value;
+        }
+
+        @Override
+        public JsonNode build() {
+            return value;
+        }
+
+        @Override
+        public String getNodeType() {
+            if (value.isNumber()) {
+                return "number";
+            } else if (value.isBoolean()) {
+                return "boolean";
+            } else if (value.isString()) {
+                return "string";
+            } else {
+                return value.toString();
+            }
+        }
+    }
+
+    private static class TomlObjectBuilder implements TomlNodeBuilder {
+        final Map<String, TomlNodeBuilder> nodes = new LinkedHashMap<>();
         boolean closed = false;
         boolean defined = false;
 
-        TomlObjectNode(JsonNodeFactory nc) {
-            super(nc);
+        @Override
+        public JsonNode build() {
+            return JsonNode.createObjectNode(nodes.entrySet().stream()
+                    .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().build())));
+        }
+
+        public TomlObjectBuilder putObject(String key) {
+            TomlObjectBuilder child = new TomlObjectBuilder();
+            nodes.put(key, child);
+            return child;
+        }
+
+        @Nullable
+        public TomlNodeBuilder get(String key) {
+            return nodes.get(key);
+        }
+
+        public TomlArrayBuilder putArray(String key) {
+            TomlArrayBuilder child = new TomlArrayBuilder();
+            nodes.put(key, child);
+            return child;
+        }
+
+        public boolean isEmpty() {
+            return nodes.isEmpty();
+        }
+
+        public boolean has(String key) {
+            return nodes.containsKey(key);
+        }
+
+        public void set(String key, TomlNodeBuilder value) {
+            nodes.put(key, value);
+        }
+
+        @Override
+        public String getNodeType() {
+            return "table";
         }
     }
 
-    @SuppressWarnings("serial") // only used internally, no need to be JDK serializable
-    private static class TomlArrayNode extends ArrayNode {
+    private static class TomlArrayBuilder implements TomlNodeBuilder {
+        final List<TomlNodeBuilder> nodes = new ArrayList<>();
         boolean closed = false;
 
-        TomlArrayNode(JsonNodeFactory nf) {
-            super(nf);
+        @Override
+        public JsonNode build() {
+            return JsonNode.createArrayNode(nodes.stream().map(TomlNodeBuilder::build).collect(Collectors.toList()));
         }
 
-        TomlArrayNode(JsonNodeFactory nf, int capacity) {
-            super(nf, capacity);
+        public int size() {
+            return nodes.size();
         }
-    }
 
-    @SuppressWarnings("serial") // only used internally, no need to be JDK serializable
-    private static class JsonNodeFactoryImpl extends JsonNodeFactory {
-        public JsonNodeFactoryImpl() {
-            super(true); // exact bigdecimals
+        public TomlNodeBuilder get(int i) {
+            return nodes.get(i);
+        }
+
+        public TomlObjectBuilder addObject() {
+            TomlObjectBuilder child = new TomlObjectBuilder();
+            nodes.add(child);
+            return child;
         }
 
         @Override
-        public ArrayNode arrayNode() {
-            return new TomlArrayNode(this);
+        public String getNodeType() {
+            return "array";
         }
 
-        @Override
-        public ArrayNode arrayNode(int capacity) {
-            return new TomlArrayNode(this, capacity);
-        }
-
-        @Override
-        public ObjectNode objectNode() {
-            return new TomlObjectNode(this);
+        public void add(TomlNodeBuilder value) {
+            nodes.add(value);
         }
     }
 }
