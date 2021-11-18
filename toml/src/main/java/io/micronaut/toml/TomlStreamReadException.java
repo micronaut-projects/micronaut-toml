@@ -22,6 +22,8 @@ import java.io.IOException;
 @Internal
 public final class TomlStreamReadException
         extends IOException {
+    private static final int MAX_SNIPPET_LENGTH = 120;
+
     private final TomlLocation loc;
 
     TomlStreamReadException(String msg, TomlLocation loc) {
@@ -50,14 +52,40 @@ public final class TomlStreamReadException
             sb.append(msg);
             sb.append('\n');
             sb.append(" at ");
-            sb.append(loc);
+            sb.append("line: ").append(loc.line);
+            sb.append(", column: ").append(loc.column);
+
+            int snippetStart = (int) loc.charPosition;
+            int snippetEnd = (int) loc.charPosition;
+            if (snippetStart > 0) {
+                snippetStart = loc.content.lastIndexOf('\n', snippetStart - 1) + 1;
+            }
+            snippetEnd = loc.content.indexOf('\n', snippetEnd);
+            if (snippetEnd == -1) {
+                snippetEnd = loc.content.length();
+            }
+            if (snippetEnd - snippetStart > MAX_SNIPPET_LENGTH) {
+                snippetStart = Math.max(snippetStart, (int) loc.charPosition - MAX_SNIPPET_LENGTH / 2);
+                snippetEnd = Math.min(snippetEnd, snippetStart + MAX_SNIPPET_LENGTH);
+            }
+            String snippet = loc.content.substring(snippetStart, snippetEnd);
+            snippet = snippet.replaceAll("[^\\x20-\\x7E]", ""); // remove non-ascii and control chars
+            sb.append('\n').append(snippet).append('\n');
+            for (int i = 0; i < loc.charPosition - snippetStart; i++) {
+                sb.append(' ');
+            }
+            sb.append("^-- near here");
+
             msg = sb.toString();
         }
         return msg;
     }
 
     static class ErrorContext {
-        ErrorContext() {
+        private final String input;
+
+        ErrorContext(String input) {
+            this.input = input;
         }
 
         ErrorBuilder atPosition(Lexer lexer) {
@@ -69,6 +97,7 @@ public final class TomlStreamReadException
 
             ErrorBuilder(Lexer lexer) {
                 this.location = new TomlLocation(
+                        input,
                         lexer.getCharPos(),
                         lexer.getLine() + 1,
                         lexer.getColumn() + 1
@@ -93,11 +122,13 @@ public final class TomlStreamReadException
     }
 
     private static class TomlLocation {
+        final String content;
         final long charPosition;
         final int line; // 1-based
         final int column; // 1-based
 
-        TomlLocation(long charPosition, int line, int column) {
+        TomlLocation(String content, long charPosition, int line, int column) {
+            this.content = content;
             this.charPosition = charPosition;
             this.line = line;
             this.column = column;

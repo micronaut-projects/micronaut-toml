@@ -55,8 +55,8 @@ public final class Parser {
         this.next = lexer.yylex();
     }
 
-    public static JsonNode parse(CharSequence input) throws IOException {
-        Parser parser = new Parser(new TomlStreamReadException.ErrorContext(), input);
+    public static JsonNode parse(String input) throws IOException {
+        Parser parser = new Parser(new TomlStreamReadException.ErrorContext(input), input);
         return parser.parse();
     }
 
