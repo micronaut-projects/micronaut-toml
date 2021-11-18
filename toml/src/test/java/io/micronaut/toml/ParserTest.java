@@ -40,7 +40,7 @@ public class ParserTest {
     }
 
     static JsonNode toml(int opts, @Language("toml") String toml) throws IOException {
-        return Parser.parse(opts, toml);
+        return Parser.parse(toml);
     }
 
     @SuppressWarnings("deprecation")

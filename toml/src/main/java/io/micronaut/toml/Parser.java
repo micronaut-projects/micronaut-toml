@@ -1,3 +1,18 @@
+/*
+ * Copyright 2017-2021 original authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.micronaut.toml;
 
 import io.micronaut.core.annotation.Internal;
@@ -13,43 +28,48 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * TOML parser class. Not stable API, internal use only.
+ *
+ * Note: This class is adapted from
+ * <a href='https://github.com/FasterXML/jackson-dataformats-text/blob/2.14/toml'>jackson-dataformats-text</a>, also
+ * built by me (Jonas Konrad).
+ *
+ * @author Jonas Konrad
+ */
 @Internal
-public class Parser {
+public final class Parser {
     private final TomlStreamReadException.ErrorContext errorContext;
-    private final int options;
     private final Lexer lexer;
 
     private TomlToken next;
 
     private Parser(
             TomlStreamReadException.ErrorContext errorContext,
-            int options,
             CharSequence input
     ) throws IOException {
         this.errorContext = errorContext;
-        this.options = options;
         this.lexer = new Lexer(null, errorContext);
         lexer.reset(input, 0, input.length(), Lexer.EXPECT_EXPRESSION);
         lexer.prohibitInternalBufferAllocate = false;
         this.next = lexer.yylex();
     }
 
-    public static JsonNode parse(
-            int options,
-            CharSequence input
-    ) throws IOException {
-        Parser parser = new Parser(new TomlStreamReadException.ErrorContext(), options, input);
+    public static JsonNode parse(CharSequence input) throws IOException {
+        Parser parser = new Parser(new TomlStreamReadException.ErrorContext(), input);
         return parser.parse();
     }
 
     private TomlToken peek() throws TomlStreamReadException {
         TomlToken here = this.next;
-        if (here == null) throw errorContext.atPosition(lexer).generic("Premature end of file");
+        if (here == null) {
+            throw errorContext.atPosition(lexer).generic("Premature end of file");
+        }
         return here;
     }
 
     /**
-     * Note: Polling also lexes the next token, so methods like {@link Lexer#yytext()} will not work afterwards
+     * Note: Polling also lexes the next token, so methods like {@link Lexer#yytext()} will not work afterwards.
      */
     private TomlToken poll(int nextState) throws IOException {
         TomlToken here = peek();
