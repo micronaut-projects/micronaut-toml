@@ -19,6 +19,10 @@ public class TomlStreamReadException
         this.loc = loc;
     }
 
+    public String getOriginalMessage() {
+        return super.getMessage();
+    }
+
     @Override
     public String getMessage() {
         // adapted from jackson JsonProcessingException

@@ -5,19 +5,22 @@ import com.fasterxml.jackson.core.json.JsonReadFeature;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import io.micronaut.jackson.core.tree.JsonNodeTreeCodec;
 import io.micronaut.json.JsonStreamConfig;
 import io.micronaut.json.tree.JsonNode;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.intellij.lang.annotations.Language;
 import org.junit.Assert;
 import org.junit.Rule;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.rules.ExpectedException;
 
 import java.io.IOException;
-import java.io.StringReader;
 import java.math.BigInteger;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 @SuppressWarnings("OctalInteger")
 public class ParserTest {
@@ -29,7 +32,7 @@ public class ParserTest {
     static JsonNode json(@Language("json") String json) throws IOException {
         return JsonNodeTreeCodec.getInstance()
                 .withConfig(JsonStreamConfig.DEFAULT.withUseBigDecimalForFloats(true))
-                .readTree(new JsonFactory().createParser(json));
+                .readTree(JsonFactory.builder().configure(JsonReadFeature.ALLOW_NON_NUMERIC_NUMBERS, true).build().createParser(json));
     }
 
     static JsonNode toml(@Language("toml") String toml) throws IOException {
@@ -37,10 +40,7 @@ public class ParserTest {
     }
 
     static JsonNode toml(int opts, @Language("toml") String toml) throws IOException {
-        return Parser.parse(
-                opts,
-                new StringReader(toml)
-        );
+        return Parser.parse(opts, toml);
     }
 
     @SuppressWarnings("deprecation")
@@ -49,9 +49,9 @@ public class ParserTest {
 
     @Test
     public void unclosed() throws IOException {
-        expectedException.expect(TomlStreamReadException.class);
-        expectedException.expectMessage("EOF");
-        toml("\"abc");
+        MatcherAssert.assertThat(
+                Assertions.assertThrows(TomlStreamReadException.class, () -> toml("\"abc")).getOriginalMessage(),
+                Matchers.containsString("EOF"));
     }
 
     // from the manual
@@ -144,18 +144,18 @@ public class ParserTest {
 
     @Test
     public void collision() throws IOException {
-        expectedException.expect(TomlStreamReadException.class);
-        expectedException.expectMessage("Duplicate key");
-        toml("name = \"Tom\"\n" +
-                "name = \"Pradyun\"");
+        MatcherAssert.assertThat(
+                Assertions.assertThrows(TomlStreamReadException.class, () -> toml("name = \"Tom\"\n" +
+                        "name = \"Pradyun\"")).getOriginalMessage(),
+                Matchers.containsString("Duplicate key"));
     }
 
     @Test
     public void collisionQuoted() throws IOException {
-        expectedException.expect(TomlStreamReadException.class);
-        expectedException.expectMessage("Duplicate key");
-        toml("spelling = \"favorite\"\n" +
-                "\"spelling\" = \"favourite\"");
+        MatcherAssert.assertThat(
+                Assertions.assertThrows(TomlStreamReadException.class, () -> toml("spelling = \"favorite\"\n" +
+                        "\"spelling\" = \"favourite\"")).getOriginalMessage(),
+                Matchers.containsString("Duplicate key"));
     }
 
     @Test
@@ -172,14 +172,14 @@ public class ParserTest {
 
     @Test
     public void collisionNested() throws IOException {
-        expectedException.expect(TomlStreamReadException.class);
-        expectedException.expectMessage("Path into existing non-object value of type NUMBER");
-        toml("# This defines the value of fruit.apple to be an integer.\n" +
-                "fruit.apple = 1\n" +
-                "\n" +
-                "# But then this treats fruit.apple like it's a table.\n" +
-                "# You can't turn an integer into a table.\n" +
-                "fruit.apple.smooth = true");
+        MatcherAssert.assertThat(
+                Assertions.assertThrows(TomlStreamReadException.class, () -> toml("# This defines the value of fruit.apple to be an integer.\n" +
+                        "fruit.apple = 1\n" +
+                        "\n" +
+                        "# But then this treats fruit.apple like it's a table.\n" +
+                        "# You can't turn an integer into a table.\n" +
+                        "fruit.apple.smooth = true")).getOriginalMessage(),
+                Matchers.containsString("Path into existing non-object value of type number"));
     }
 
     @Test
@@ -275,9 +275,9 @@ public class ParserTest {
 
     @Test
     public void missingQuotesEscape() throws IOException {
-        expectedException.expect(TomlStreamReadException.class);
-        expectedException.expectMessage("More data after value has already ended. Invalid value preceding this position?");
-        toml("str5 = \"\"\"Here are three quotation marks: \"\"\".\"\"\"");
+        MatcherAssert.assertThat(
+                Assertions.assertThrows(TomlStreamReadException.class, () -> toml("str5 = \"\"\"Here are three quotation marks: \"\"\".\"\"\"")).getOriginalMessage(),
+                Matchers.containsString("More data after value has already ended. Invalid value preceding this position?"));
     }
 
     @Test
@@ -365,7 +365,7 @@ public class ParserTest {
                         "flt3 = -0.01\n" +
                         "\n" +
                         "# exponent\n" +
-                        "flt4 = 5e+22\n" +
+                        "flt4 = 5.0e+22\n" +
                         // intellij doesn't like this one either :)
                         "flt5 = 1e06\n" +
                         "flt6 = -2E-2\n" +
@@ -377,23 +377,23 @@ public class ParserTest {
 
     @Test
     public void invalidFloat1() throws IOException {
-        expectedException.expect(TomlStreamReadException.class);
-        expectedException.expectMessage("Unknown token");
-        toml("invalid_float_1 = .7");
+        MatcherAssert.assertThat(
+                Assertions.assertThrows(TomlStreamReadException.class, () -> toml("invalid_float_1 = .7")).getOriginalMessage(),
+                Matchers.containsString("Unknown token"));
     }
 
     @Test
     public void invalidFloat2() throws IOException {
-        expectedException.expect(TomlStreamReadException.class);
-        expectedException.expectMessage("More data after value has already ended. Invalid value preceding this position?");
-        toml("invalid_float_2 = 7.");
+        MatcherAssert.assertThat(
+                Assertions.assertThrows(TomlStreamReadException.class, () -> toml("invalid_float_2 = 7.")).getOriginalMessage(),
+                Matchers.containsString("More data after value has already ended. Invalid value preceding this position?"));
     }
 
     @Test
     public void invalidFloat3() throws IOException {
-        expectedException.expect(TomlStreamReadException.class);
-        expectedException.expectMessage("More data after value has already ended. Invalid value preceding this position?");
-        toml("invalid_float_3 = 3.e+20");
+        MatcherAssert.assertThat(
+                Assertions.assertThrows(TomlStreamReadException.class, () -> toml("invalid_float_3 = 3.e+20")).getOriginalMessage(),
+                Matchers.containsString("More data after value has already ended. Invalid value preceding this position?"));
     }
 
     @Test
@@ -406,8 +406,15 @@ public class ParserTest {
 
     @Test
     public void floatSpecial() throws IOException {
+        Map<String, JsonNode> expected = new LinkedHashMap<>();
+        expected.put("sf1", JsonNode.createNumberNode(Float.POSITIVE_INFINITY));
+        expected.put("sf2", JsonNode.createNumberNode(Float.POSITIVE_INFINITY));
+        expected.put("sf3", JsonNode.createNumberNode(Float.NEGATIVE_INFINITY));
+        expected.put("sf4", JsonNode.createNumberNode(Float.NaN));
+        expected.put("sf5", JsonNode.createNumberNode(Float.NaN));
+        expected.put("sf6", JsonNode.createNumberNode(Float.NaN));
         Assert.assertEquals(
-                json("{\"sf1\": Infinity, \"sf2\": Infinity, \"sf3\": -Infinity, \"sf4\": NaN, \"sf5\": NaN, \"sf6\": NaN}"),
+                JsonNode.createObjectNode(expected),
                 toml("# infinity\n" +
                         "sf1 = inf  # positive infinity\n" +
                         "sf2 = +inf # positive infinity\n" +
@@ -571,24 +578,24 @@ public class ParserTest {
 
     @Test
     public void duplicateTable() throws IOException {
-        expectedException.expect(TomlStreamReadException.class);
-        expectedException.expectMessage("Table redefined");
-        toml("[fruit]\n" +
-                "apple = \"red\"\n" +
-                "\n" +
-                "[fruit]\n" +
-                "orange = \"orange\"");
+        MatcherAssert.assertThat(
+                Assertions.assertThrows(TomlStreamReadException.class, () -> toml("[fruit]\n" +
+                        "apple = \"red\"\n" +
+                        "\n" +
+                        "[fruit]\n" +
+                        "orange = \"orange\"")).getOriginalMessage(),
+                Matchers.containsString("Table redefined"));
     }
 
     @Test
     public void mixedTable() throws IOException {
-        expectedException.expect(TomlStreamReadException.class);
-        expectedException.expectMessage("Path into existing non-object value of type STRING");
-        toml("[fruit]\n" +
-                "apple = \"red\"\n" +
-                "\n" +
-                "[fruit.apple]\n" +
-                "texture = \"smooth\"");
+        MatcherAssert.assertThat(
+                Assertions.assertThrows(TomlStreamReadException.class, () -> toml("[fruit]\n" +
+                        "apple = \"red\"\n" +
+                        "\n" +
+                        "[fruit.apple]\n" +
+                        "texture = \"smooth\"")).getOriginalMessage(),
+                Matchers.containsString("Path into existing non-object value of type string"));
     }
 
     @Test
@@ -643,26 +650,26 @@ public class ParserTest {
 
     @Test
     public void dottedCollisionRoot() throws IOException {
-        expectedException.expect(TomlStreamReadException.class);
-        expectedException.expectMessage("Table redefined");
-        toml("fruit.apple.color = \"red\"\n" +
-                "# Defines a table named fruit\n" +
-                "# Defines a table named fruit.apple\n" +
-                "\n" +
-                "[fruit]\n" +
-                "foo" +
-                " = \"bar\"");
+        MatcherAssert.assertThat(
+                Assertions.assertThrows(TomlStreamReadException.class, () -> toml("fruit.apple.color = \"red\"\n" +
+                        "# Defines a table named fruit\n" +
+                        "# Defines a table named fruit.apple\n" +
+                        "\n" +
+                        "[fruit]\n" +
+                        "foo" +
+                        " = \"bar\"")).getOriginalMessage(),
+                Matchers.containsString("Table redefined"));
     }
 
     @Test
     public void dottedCollisionNest() throws IOException {
-        expectedException.expect(TomlStreamReadException.class);
-        expectedException.expectMessage("Table redefined");
-        toml("[fruit]\n" +
-                "apple.color = \"red\"\n" +
-                "apple.taste.sweet = true\n" +
-                "\n" +
-                "[fruit.apple]  # INVALID");
+        MatcherAssert.assertThat(
+                Assertions.assertThrows(TomlStreamReadException.class, () -> toml("[fruit]\n" +
+                        "apple.color = \"red\"\n" +
+                        "apple.taste.sweet = true\n" +
+                        "\n" +
+                        "[fruit.apple]  # INVALID")).getOriginalMessage(),
+                Matchers.containsString("Table redefined"));
     }
 
     @Test
@@ -695,20 +702,20 @@ public class ParserTest {
 
     @Test
     public void inlineTableSelfContained() throws IOException {
-        expectedException.expect(TomlStreamReadException.class);
-        expectedException.expectMessage("Object already closed");
-        toml("[product]\n" +
-                "type = { name = \"Nail\" }\n" +
-                "type.edible = false  # INVALID");
+        MatcherAssert.assertThat(
+                Assertions.assertThrows(TomlStreamReadException.class, () -> toml("[product]\n" +
+                        "type = { name = \"Nail\" }\n" +
+                        "type.edible = false  # INVALID")).getOriginalMessage(),
+                Matchers.containsString("Object already closed"));
     }
 
     @Test
     public void inlineTableSelfContained2() throws IOException {
-        expectedException.expect(TomlStreamReadException.class);
-        expectedException.expectMessage("Duplicate key");
-        toml("[product]\n" +
-                "type.name = \"Nail\"\n" +
-                "type = { edible = false }  # INVALID");
+        MatcherAssert.assertThat(
+                Assertions.assertThrows(TomlStreamReadException.class, () -> toml("[product]\n" +
+                        "type.name = \"Nail\"\n" +
+                        "type = { edible = false }  # INVALID")).getOriginalMessage(),
+                Matchers.containsString("Duplicate key"));
     }
 
     @Test
@@ -783,59 +790,59 @@ public class ParserTest {
 
     @Test
     public void arrayTableStillMissing() throws IOException {
-        expectedException.expect(TomlStreamReadException.class);
-        expectedException.expectMessage("Path into existing non-array value of type OBJECT");
-        toml("# INVALID TOML DOC\n" +
-                "[fruit.physical]  # subtable, but to which parent element should it belong?\n" +
-                "color = \"red\"\n" +
-                "shape = \"round\"\n" +
-                "\n" +
-                "[[fruit]]  # parser must throw an error upon discovering that \"fruit\" is\n" +
-                "           # an array rather than a table\n" +
-                "name = \"apple\"");
+        MatcherAssert.assertThat(
+                Assertions.assertThrows(TomlStreamReadException.class, () -> toml("# INVALID TOML DOC\n" +
+                        "[fruit.physical]  # subtable, but to which parent element should it belong?\n" +
+                        "color = \"red\"\n" +
+                        "shape = \"round\"\n" +
+                        "\n" +
+                        "[[fruit]]  # parser must throw an error upon discovering that \"fruit\" is\n" +
+                        "           # an array rather than a table\n" +
+                        "name = \"apple\"")).getOriginalMessage(),
+                Matchers.containsString("Path into existing non-array value of type table"));
     }
 
     @Test
     public void arrayInlineAndTable() throws IOException {
-        expectedException.expect(TomlStreamReadException.class);
-        expectedException.expectMessage("Array already finished");
-        toml("# INVALID TOML DOC\n" +
-                "fruits = []\n" +
-                "\n" +
-                "[[fruits]] # Not allowed");
+        MatcherAssert.assertThat(
+                Assertions.assertThrows(TomlStreamReadException.class, () -> toml("# INVALID TOML DOC\n" +
+                        "fruits = []\n" +
+                        "\n" +
+                        "[[fruits]] # Not allowed")).getOriginalMessage(),
+                Matchers.containsString("Array already finished"));
     }
 
     @Test
     public void arrayCollision1() throws IOException {
-        expectedException.expect(TomlStreamReadException.class);
-        expectedException.expectMessage("Path into existing non-object value of type ARRAY");
-        toml("# INVALID TOML DOC\n" +
-                "[[fruits]]\n" +
-                "name = \"apple\"\n" +
-                "\n" +
-                "[[fruits.varieties]]\n" +
-                "name = \"red delicious\"\n" +
-                "\n" +
-                "# INVALID: This table conflicts with the previous array of tables\n" +
-                "[fruits.varieties]\n" +
-                "name = \"granny smith\"");
+        MatcherAssert.assertThat(
+                Assertions.assertThrows(TomlStreamReadException.class, () -> toml("# INVALID TOML DOC\n" +
+                        "[[fruits]]\n" +
+                        "name = \"apple\"\n" +
+                        "\n" +
+                        "[[fruits.varieties]]\n" +
+                        "name = \"red delicious\"\n" +
+                        "\n" +
+                        "# INVALID: This table conflicts with the previous array of tables\n" +
+                        "[fruits.varieties]\n" +
+                        "name = \"granny smith\"")).getOriginalMessage(),
+                Matchers.containsString("Path into existing non-object value of type array"));
     }
 
     @Test
     public void arrayCollision2() throws IOException {
-        expectedException.expect(TomlStreamReadException.class);
-        expectedException.expectMessage("Path into existing non-array value of type OBJECT");
-        toml("# INVALID TOML DOC\n" +
-                "[[fruits]]\n" +
-                "name = \"apple\"\n" +
-                "\n" +
-                "[fruits.physical]\n" +
-                "color = \"red\"\n" +
-                "shape = \"round\"\n" +
-                "\n" +
-                "# INVALID: This array of tables conflicts with the previous table\n" +
-                "[[fruits.physical]]\n" +
-                "color = \"green\"");
+        MatcherAssert.assertThat(
+                Assertions.assertThrows(TomlStreamReadException.class, () -> toml("# INVALID TOML DOC\n" +
+                        "[[fruits]]\n" +
+                        "name = \"apple\"\n" +
+                        "\n" +
+                        "[fruits.physical]\n" +
+                        "color = \"red\"\n" +
+                        "shape = \"round\"\n" +
+                        "\n" +
+                        "# INVALID: This array of tables conflicts with the previous table\n" +
+                        "[[fruits.physical]]\n" +
+                        "color = \"green\"")).getOriginalMessage(),
+                Matchers.containsString("Path into existing non-array value of type table"));
     }
 
     @Test
@@ -855,9 +862,9 @@ public class ParserTest {
 
     @Test
     public void inlineTableTrailingComma() throws IOException {
-        expectedException.expect(TomlStreamReadException.class);
-        expectedException.expectMessage("Trailing comma not permitted for inline tables");
-        toml("foo = {bar = 'baz',}");
+        MatcherAssert.assertThat(
+                Assertions.assertThrows(TomlStreamReadException.class, () -> toml("foo = {bar = 'baz',}")).getOriginalMessage(),
+                Matchers.containsString("Trailing comma not permitted for inline tables"));
     }
 
     @Test
@@ -870,10 +877,10 @@ public class ParserTest {
 
     @Test
     public void inlineTableNl() throws IOException {
-        expectedException.expect(TomlStreamReadException.class);
-        expectedException.expectMessage("Newline not permitted here");
-        toml("foo = {bar = 'baz',\n" +
-                "a = 'b'}");
+        MatcherAssert.assertThat(
+                Assertions.assertThrows(TomlStreamReadException.class, () -> toml("foo = {bar = 'baz',\n" +
+                        "a = 'b'}")).getOriginalMessage(),
+                Matchers.containsString("Newline not permitted here"));
     }
 
     @Test
@@ -887,18 +894,19 @@ public class ParserTest {
 
     @Test
     public void extendedUnicodeEscapeInvalid() throws IOException {
-        expectedException.expect(TomlStreamReadException.class);
-        expectedException.expectMessage("Invalid code point ffffffff");
-        toml("foo = \"\\Uffffffff\"");
+        MatcherAssert.assertThat(
+                Assertions.assertThrows(TomlStreamReadException.class, () -> toml("foo = \"\\Uffffffff\"")).getOriginalMessage(),
+                Matchers.containsString("Invalid code point ffffffff"));
     }
 
     @Test
     public void intTypes() throws IOException {
+        Map<String, JsonNode> expected = new LinkedHashMap<>();
+        expected.put("int1", JsonNode.createNumberNode(99));
+        expected.put("int2", JsonNode.createNumberNode(4242424242L));
+        expected.put("int3", JsonNode.createNumberNode(new BigInteger("171717171717171717171717")));
         Assert.assertEquals(
-                JsonNodeFactory.instance.objectNode()
-                        .put("int1", 99)
-                        .put("int2", 4242424242L)
-                        .put("int3", new BigInteger("171717171717171717171717")),
+                JsonNode.createObjectNode(expected),
                 toml("int1 = +99\n" +
                         "int2 = 4242424242\n" +
                         "int3 = 171717171717171717171717")
@@ -907,13 +915,14 @@ public class ParserTest {
 
     @Test
     public void longBase() throws IOException {
+        Map<String, JsonNode> expected = new LinkedHashMap<>();
+        expected.put("hex1", JsonNode.createNumberNode(0xDDEADBEEFL));
+        expected.put("hex2", JsonNode.createNumberNode(0xddeadbeefL));
+        expected.put("hex3", JsonNode.createNumberNode(0xddead_beefL));
+        expected.put("oct1", JsonNode.createNumberNode(01234567777777L));
+        expected.put("bin1", JsonNode.createNumberNode(0b11010110101010101010101010101010101010L));
         Assert.assertEquals(
-                JsonNodeFactory.instance.objectNode()
-                        .put("hex1", 0xDDEADBEEFL)
-                        .put("hex2", 0xddeadbeefL)
-                        .put("hex3", 0xddead_beefL)
-                        .put("oct1", 01234567777777L)
-                        .put("bin1", 0b11010110101010101010101010101010101010L),
+                JsonNode.createObjectNode(expected),
                 toml("hex1 = 0xdDEADBEEF\n" +
                         "hex2 = 0xddeadbeef\n" +
                         "hex3 = 0xddead_beef\n" +
@@ -924,13 +933,14 @@ public class ParserTest {
 
     @Test
     public void bigintBase() throws IOException {
+        Map<String, JsonNode> expected = new LinkedHashMap<>();
+        expected.put("hex1", JsonNode.createNumberNode(new BigInteger("DDEADBEEFDDEADBEEF", 16)));
+        expected.put("hex2", JsonNode.createNumberNode(new BigInteger("DDEADBEEFDDEADBEEF", 16)));
+        expected.put("hex3", JsonNode.createNumberNode(new BigInteger("DDEADBEEFDDEADBEEF", 16)));
+        expected.put("oct1", JsonNode.createNumberNode(new BigInteger("12345677777771234567777777", 8)));
+        expected.put("bin1", JsonNode.createNumberNode(new BigInteger("1101011010101010101010101010101010101011010110101010101010101010101010101010", 2)));
         Assert.assertEquals(
-                JsonNodeFactory.instance.objectNode()
-                        .put("hex1", new BigInteger("DDEADBEEFDDEADBEEF", 16))
-                        .put("hex2", new BigInteger("DDEADBEEFDDEADBEEF", 16))
-                        .put("hex3", new BigInteger("DDEADBEEFDDEADBEEF", 16))
-                        .put("oct1", new BigInteger("12345677777771234567777777", 8))
-                        .put("bin1", new BigInteger("1101011010101010101010101010101010101011010110101010101010101010101010101010", 2)),
+                JsonNode.createObjectNode(expected),
                 toml("hex1 = 0xDDEADBEEFDDEADBEEF\n" +
                         "hex2 = 0xddeadbeefddeadbeef\n" +
                         "hex3 = 0xddead_beefddead_beef\n" +
@@ -983,45 +993,45 @@ public class ParserTest {
 
     @Test
     public void controlCharInComment() throws IOException {
-        expectedException.expect(TomlStreamReadException.class);
-        expectedException.expectMessage("Illegal control character");
+        MatcherAssert.assertThat(
+                Assertions.assertThrows(TomlStreamReadException.class, () -> toml("a = \"0x7f\" # \u007F")).getOriginalMessage(),
+                Matchers.containsString("Illegal control character"));
         // https://github.com/toml-lang/toml/pull/812
-        toml("a = \"0x7f\" # \u007F");
     }
 
     @Test
     public void controlCharInLiteralString() throws IOException {
-        expectedException.expect(TomlStreamReadException.class);
-        expectedException.expectMessage("Illegal control character");
+        MatcherAssert.assertThat(
+                Assertions.assertThrows(TomlStreamReadException.class, () -> toml("a = '\u007F'")).getOriginalMessage(),
+                Matchers.containsString("Illegal control character"));
         // Not explicit in spec, but only in the abnf
-        toml("a = '\u007F'");
     }
 
     @Test
     public void zeroPrefixedInt() throws IOException {
-        expectedException.expect(TomlStreamReadException.class);
-        expectedException.expectMessage("Zero-prefixed ints are not valid");
-        toml("foo = 01");
+        MatcherAssert.assertThat(
+                Assertions.assertThrows(TomlStreamReadException.class, () -> toml("foo = 01")).getOriginalMessage(),
+                Matchers.containsString("Zero-prefixed ints are not valid"));
     }
 
     @Test
     public void signedBase() throws IOException {
-        expectedException.expect(TomlStreamReadException.class);
-        expectedException.expectMessage("More data after value has already ended. Invalid value preceding this position?");
-        toml("foo = +0b1");
+        MatcherAssert.assertThat(
+                Assertions.assertThrows(TomlStreamReadException.class, () -> toml("foo = +0b1")).getOriginalMessage(),
+                Matchers.containsString("More data after value has already ended. Invalid value preceding this position?"));
     }
 
     @Test
     public void illegalComment() throws IOException {
-        expectedException.expect(TomlStreamReadException.class);
-        expectedException.expectMessage("Comment not permitted here");
-        toml("foo = # bar");
+        MatcherAssert.assertThat(
+                Assertions.assertThrows(TomlStreamReadException.class, () -> toml("foo = # bar")).getOriginalMessage(),
+                Matchers.containsString("Comment not permitted here"));
     }
 
     @Test
     public void unknownEscape() throws IOException {
-        expectedException.expect(TomlStreamReadException.class);
-        expectedException.expectMessage("Unknown escape sequence");
-        toml("foo = \"\\k\"");
+        MatcherAssert.assertThat(
+                Assertions.assertThrows(TomlStreamReadException.class, () -> toml("foo = \"\\k\"")).getOriginalMessage(),
+                Matchers.containsString("Unknown escape sequence"));
     }
 }

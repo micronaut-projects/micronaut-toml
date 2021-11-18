@@ -23,20 +23,21 @@ class Parser {
     private Parser(
             TomlStreamReadException.ErrorContext errorContext,
             int options,
-            Reader reader
+            CharSequence input
     ) throws IOException {
         this.errorContext = errorContext;
         this.options = options;
-        this.lexer = new Lexer(reader, errorContext);
+        this.lexer = new Lexer(null, errorContext);
+        lexer.reset(input, 0, input.length(), Lexer.EXPECT_EXPRESSION);
         lexer.prohibitInternalBufferAllocate = false;
         this.next = lexer.yylex();
     }
 
     public static JsonNode parse(
             int options,
-            Reader reader
+            CharSequence input
     ) throws IOException {
-        Parser parser = new Parser(new TomlStreamReadException.ErrorContext(), options, reader);
+        Parser parser = new Parser(new TomlStreamReadException.ErrorContext(), options, input);
         return parser.parse();
     }
 
@@ -225,7 +226,7 @@ class Parser {
         for (int i = 0; i < length; i++) {
             if (buffer.charAt(start + i) == '_') {
                 // slow path to remove underscores
-                buffer = buffer.toString().substring(start, length).replace("_", "");
+                buffer = buffer.toString().substring(start, start + length).replace("_", "");
                 start = 0;
                 length = buffer.length();
                 break;
@@ -238,7 +239,7 @@ class Parser {
             if (baseChar == 'x' || baseChar == 'o' || baseChar == 'b') {
                 start += 2;
                 length -= 2;
-                String text = buffer.toString().substring(start, length);
+                String text = buffer.toString().substring(start, start + length);
                 // note: we parse all these as unsigned. Hence the weird int limits.
                 // hex
                 if (baseChar == 'x') {
@@ -285,7 +286,7 @@ class Parser {
         } else {
             negative = false;
         }
-        String bufferString = buffer.toString().substring(start, length);
+        String bufferString = buffer.toString().substring(start, start + length);
         // adapted from JsonParserBase
         if (length <= 9) {
             int v = Integer.parseInt(bufferString);
@@ -313,9 +314,9 @@ class Parser {
         String text = lexer.yytext().toString().replace("_", "");
         pollExpected(TomlToken.FLOAT, nextState);
         if (text.endsWith("nan")) {
-            return JsonNode.createNumberNode(Double.NaN);
+            return JsonNode.createNumberNode(Float.NaN);
         } else if (text.endsWith("inf")) {
-            return JsonNode.createNumberNode(text.startsWith("-") ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY);
+            return JsonNode.createNumberNode(text.startsWith("-") ? Float.NEGATIVE_INFINITY : Float.POSITIVE_INFINITY);
         } else {
             BigDecimal dec = new BigDecimal(text);
             return JsonNode.createNumberNode(dec);

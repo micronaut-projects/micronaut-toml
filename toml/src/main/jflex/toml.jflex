@@ -14,7 +14,6 @@ package io.micronaut.toml;
 
 %init{
 this.errorContext = errorContext;
-yybegin(EXPECT_EXPRESSION);
 this.textBuffer = new StringBuilder();
 %init}
 
@@ -48,7 +47,7 @@ this.textBuffer = new StringBuilder();
 
   private void appendNormalTextToken() {
       // equivalent to append(yytext()), without the roundtrip through the String constructor
-      textBuffer.append(zzBuffer, zzStartRead, zzMarkedPos-zzStartRead);
+      textBuffer.append(zzBuffer, zzStartRead, zzMarkedPos);
   }
 
   private void appendNewlineWithPossibleTrim() {
