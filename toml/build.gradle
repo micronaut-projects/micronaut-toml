@@ -5,19 +5,16 @@ plugins {
 
 group = 'io.micronaut.toml'
 
-task generateLexer(type: org.jetbrains.grammarkit.tasks.GenerateLexer) {
+def generateLexer = tasks.register("generateLexer", org.jetbrains.grammarkit.tasks.GenerateLexer) {
     source = 'src/main/jflex/toml.jflex'
     //skeleton = 'src/main/jflex/skeleton-toml'
     targetDir = 'build/generated/sources/jflex/io/micronaut/toml'
     targetClass = 'Lexer'
     purgeOldFiles = true
 }
+generateLexer.get() // force generation because GrammarKit is not compatible with lazy configuration
 
-sourceSets.main.java.srcDirs += ['build/generated/sources/jflex']
-
-compileJava {
-    dependsOn generateLexer
-}
+sourceSets.main.java.srcDir(generateLexer.map { it.targetDir } )
 
 dependencies {
     api mn.micronaut.json.core
