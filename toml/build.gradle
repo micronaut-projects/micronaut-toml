@@ -24,5 +24,5 @@ dependencies {
     testImplementation mn.micronaut.jackson.databind
     testImplementation mn.micronaut.test.junit5
     testImplementation mn.micronaut.test.spock
-    testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.8.1'
+    testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.8.2'
 }
