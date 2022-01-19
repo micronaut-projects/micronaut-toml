@@ -1,1 +1,4 @@
-TODO
+https://toml.io/en/[TOML] is a configuration format that easy to read, easy to write, and easy to parse.
+
+Using this module, the Micronaut framework supports config files in the TOML format. This makes for configuration that is easier to read than Java Properties, but is also faster to parse than YAML (and does not rely on indentation).
+

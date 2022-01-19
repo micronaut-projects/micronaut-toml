@@ -1,1 +1,12 @@
-TODO
+To add support for TOML to an existing project, you should add the Micronaut TOML module to your build configuration. For example:
+
+dependency:toml[groupId="io.micronaut.toml"]
+
+You can then start using TOML for your application configuration:
+
+.Minimal application.toml
+[source,toml]
+----
+[micronaut.application]
+name = "example"
+----
