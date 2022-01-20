@@ -1,0 +1,22 @@
+plugins {
+    id 'java-gradle-plugin'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'de.jflex:jflex:1.8.2'
+}
+
+
+
+gradlePlugin {
+    plugins {
+        jflex {
+            id = 'io.micronaut.internal.jflex'
+            implementationClass = 'io.micronaut.internal.jflex.JFlexPlugin'
+        }
+    }
+}

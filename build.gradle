@@ -2,28 +2,3 @@ plugins {
     id "io.micronaut.build.internal.docs"
     id "io.micronaut.build.internal.dependency-updates"
 }
-
-repositories {
-    // This is done because the GrammarKit plugin does something not nice at all:
-    // it transparently adds a dependency to Grammar-Kit, but that shouldn't be
-    // needed to compile sources but it breaks Javadoc generation. Worse, it does
-    // this by transparently adding Jitpack as a repository, which is completely
-    // wrong as a plugin should NEVER add repositories: it's a security problem.
-    // Therefore we limit the risks by limiting the Jitpack repo to GrammarKit.
-    maven {
-        name = "Jitpack"
-        url = "https://www.jitpack.io"
-        content {
-            includeModule("com.github.JetBrains", "Grammar-Kit")
-        }
-    }
-    // oh yes, by the way, it also adds ANOTHER repository
-    maven {
-        name = "Jetbrains Blackbox Repository"
-        url = "https://cache-redirector.jetbrains.com/intellij-dependencies"
-        content {
-            includeModule("org.jetbrains.intellij.deps.jflex", "jflex")
-        }
-    }
-
-}
