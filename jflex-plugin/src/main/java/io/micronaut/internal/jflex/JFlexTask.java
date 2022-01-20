@@ -23,7 +23,6 @@ import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.PathSensitive;
 import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskAction;
-import org.gradle.api.tasks.util.PatternSet;
 import org.gradle.workers.WorkerExecutor;
 
 import javax.inject.Inject;
