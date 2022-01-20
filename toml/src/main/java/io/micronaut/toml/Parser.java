@@ -20,6 +20,8 @@ import io.micronaut.core.annotation.Nullable;
 import io.micronaut.json.tree.JsonNode;
 
 import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -46,17 +48,16 @@ public final class Parser {
 
     private Parser(
             TomlStreamReadException.ErrorContext errorContext,
-            CharSequence input
+            Reader input
     ) throws IOException {
         this.errorContext = errorContext;
-        this.lexer = new Lexer(null, errorContext);
-        lexer.reset(input, 0, input.length(), Lexer.EXPECT_EXPRESSION);
+        this.lexer = new Lexer(input, errorContext);
         lexer.prohibitInternalBufferAllocate = false;
         this.next = lexer.yylex();
     }
 
     public static JsonNode parse(String input) throws IOException {
-        Parser parser = new Parser(new TomlStreamReadException.ErrorContext(input), input);
+        Parser parser = new Parser(new TomlStreamReadException.ErrorContext(input), new StringReader(input));
         return parser.parse();
     }
 
@@ -141,7 +142,7 @@ public final class Parser {
             if (partToken == TomlToken.STRING) {
                 part = lexer.textBuffer.toString();
             } else if (partToken == TomlToken.UNQUOTED_KEY) {
-                part = lexer.yytext().toString();
+                part = lexer.yytext();
             } else {
                 throw errorContext.atPosition(lexer).unexpectedToken(partToken, "quoted or unquoted key");
             }
@@ -153,7 +154,7 @@ public final class Parser {
 
             TomlNodeBuilder existing = node.get(part);
             if (existing == null) {
-                node = (TomlObjectBuilder) node.putObject(part);
+                node = node.putObject(part);
             } else if (existing instanceof TomlObjectBuilder) {
                 node = (TomlObjectBuilder) existing;
             } else if (existing instanceof TomlArrayBuilder) {
@@ -208,7 +209,7 @@ public final class Parser {
     }
 
     private JsonNode parseDateTime(int nextState) throws IOException {
-        String text = lexer.yytext().toString();
+        String text = lexer.yytext();
         TomlToken token = poll(nextState);
         // the time-delim index can be [Tt ]. java.time supports only [Tt]
         if ((token == TomlToken.LOCAL_DATE_TIME || token == TomlToken.OFFSET_DATE_TIME) && text.charAt(10) == ' ') {
@@ -241,26 +242,26 @@ public final class Parser {
     }
 
     private JsonNode parseInt(int nextState) throws IOException {
-        CharSequence buffer = lexer.getTextBuffer();
+        char[] buffer = lexer.getTextBuffer();
         int start = lexer.getTextBufferStart();
         int length = lexer.getTextBufferEnd() - lexer.getTextBufferStart();
         for (int i = 0; i < length; i++) {
-            if (buffer.charAt(start + i) == '_') {
+            if (buffer[start + i] == '_') {
                 // slow path to remove underscores
-                buffer = buffer.toString().substring(start, start + length).replace("_", "");
+                buffer = new String(buffer, start, length).replace("_", "").toCharArray();
                 start = 0;
-                length = buffer.length();
+                length = buffer.length;
                 break;
             }
         }
 
         pollExpected(TomlToken.INTEGER, nextState);
         if (length > 2) {
-            char baseChar = buffer.charAt(start + 1);
+            char baseChar = buffer[start + 1];
             if (baseChar == 'x' || baseChar == 'o' || baseChar == 'b') {
                 start += 2;
                 length -= 2;
-                String text = buffer.toString().substring(start, start + length);
+                String text = new String(buffer, start, length);
                 // note: we parse all these as unsigned. Hence the weird int limits.
                 // hex
                 if (baseChar == 'x') {
@@ -296,18 +297,18 @@ public final class Parser {
         }
         // decimal
         boolean negative;
-        if (buffer.charAt(start) == '-') {
+        if (buffer[start] == '-') {
             start++;
             length--;
             negative = true;
-        } else if (buffer.charAt(start) == '+') {
+        } else if (buffer[start] == '+') {
             start++;
             length--;
             negative = false;
         } else {
             negative = false;
         }
-        String bufferString = buffer.toString().substring(start, start + length);
+        String bufferString = new String(buffer, start, length);
         // adapted from JsonParserBase
         if (length <= 9) {
             int v = Integer.parseInt(bufferString);
@@ -332,7 +333,7 @@ public final class Parser {
     }
 
     private JsonNode parseFloat(int nextState) throws IOException {
-        String text = lexer.yytext().toString().replace("_", "");
+        String text = lexer.yytext().replace("_", "");
         pollExpected(TomlToken.FLOAT, nextState);
         if (text.endsWith("nan")) {
             return JsonNode.createNumberNode(Float.NaN);
@@ -428,7 +429,7 @@ public final class Parser {
     private TomlArrayBuilder getOrCreateArray(TomlObjectBuilder node, String field) throws TomlStreamReadException {
         TomlNodeBuilder existing = node.get(field);
         if (existing == null) {
-            return (TomlArrayBuilder) node.putArray(field);
+            return node.putArray(field);
         } else if (existing instanceof TomlArrayBuilder) {
             return (TomlArrayBuilder) existing;
         } else {

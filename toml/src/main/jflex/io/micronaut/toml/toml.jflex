@@ -58,7 +58,9 @@
 
 %init{
 this.errorContext = errorContext;
+yybegin(EXPECT_EXPRESSION);
 this.textBuffer = new StringBuilder();
+this.zzBuffer = new char[256];
 %init}
 
 %{
@@ -69,19 +71,14 @@ this.textBuffer = new StringBuilder();
   private boolean trimmedNewline;
   final StringBuilder textBuffer;
 
-  /** Number of newlines encountered up to the start of the matched text. */
-  private int yyline;
-
-  /** Number of characters from the last newline up to the start of the matched text. */
-  private int yycolumn;
-
-  /** Number of characters up to the start of the matched text. */
-  private long yychar;
-
   private void requestLargerBuffer() throws TomlStreamReadException {
       if (prohibitInternalBufferAllocate) {
           throw errorContext.atPosition(this).generic("Token too long, but buffer resizing prohibited");
       }
+
+      char[] newBuffer = new char[zzBuffer.length * 2];
+      System.arraycopy(zzBuffer, 0, newBuffer, 0, zzBuffer.length);
+      zzBuffer = newBuffer;
   }
 
   private void startString() {
@@ -91,7 +88,7 @@ this.textBuffer = new StringBuilder();
 
   private void appendNormalTextToken() {
       // equivalent to append(yytext()), without the roundtrip through the String constructor
-      textBuffer.append(zzBuffer, zzStartRead, zzMarkedPos);
+      textBuffer.append(zzBuffer, zzStartRead, zzMarkedPos-zzStartRead);
   }
 
   private void appendNewlineWithPossibleTrim() {
@@ -137,7 +134,7 @@ this.textBuffer = new StringBuilder();
   int getColumn() { return yycolumn; }
   long getCharPos() { return yychar; }
 
-  CharSequence getTextBuffer() { return zzBuffer; };
+  char[] getTextBuffer() { return zzBuffer; };
   int getTextBufferStart() { return zzStartRead; };
   int getTextBufferEnd() { return zzMarkedPos; };
 %}

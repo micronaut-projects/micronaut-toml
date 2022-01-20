@@ -23,6 +23,7 @@ import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.PathSensitive;
 import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskAction;
+import org.gradle.api.tasks.util.PatternSet;
 import org.gradle.workers.WorkerExecutor;
 
 import javax.inject.Inject;
@@ -48,7 +49,8 @@ public abstract class JFlexTask extends DefaultTask {
                 .classLoaderIsolation()
                 .submit(JFlexAction.class, params -> {
                     params.getSourceDirectory().set(getSourceDirectory());
-                    params.getSourceFiles().from(getSourceDirectory());
+                    params.getSourceFiles().from(getSourceDirectory().getAsFileTree().matching(p -> p.include("**/*.jflex")));
+                    params.getSkeletonFile().set(getSourceDirectory().file("skeleton"));
                     params.getOutputDirectory().set(getOutputDirectory());
                 });
     }

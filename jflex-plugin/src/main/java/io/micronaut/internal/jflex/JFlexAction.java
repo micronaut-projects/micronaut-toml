@@ -20,6 +20,7 @@ import jflex.generator.LexGenerator;
 import jflex.option.Options;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.DirectoryProperty;
+import org.gradle.api.file.RegularFileProperty;
 import org.gradle.workers.WorkAction;
 import org.gradle.workers.WorkParameters;
 
@@ -34,6 +35,8 @@ public abstract class JFlexAction implements WorkAction<JFlexAction.Parameters> 
         Path sourcePath = getParameters().getSourceDirectory().getAsFile().get().toPath();
         File outputDirectory = getParameters().getOutputDirectory().getAsFile().get();
         OptionUtils.setDir(outputDirectory);
+        File skeletonFile = getParameters().getSkeletonFile().getAsFile().get();
+        OptionUtils.setSkeleton(skeletonFile);
         Options.dump = false;
         Options.encoding = StandardCharsets.UTF_8;
         Options.no_backup = true;
@@ -53,5 +56,6 @@ public abstract class JFlexAction implements WorkAction<JFlexAction.Parameters> 
         DirectoryProperty getSourceDirectory();
         ConfigurableFileCollection getSourceFiles();
         DirectoryProperty getOutputDirectory();
+        RegularFileProperty getSkeletonFile();
     }
 }
