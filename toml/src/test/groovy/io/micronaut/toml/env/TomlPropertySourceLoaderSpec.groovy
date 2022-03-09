@@ -62,10 +62,10 @@ something = [1, 2]
         env.start()
 
         then:
-        env.get("hibernate.cache.queries", Boolean).get() == false
-        env.get("data-source.pooled", Boolean).get() == true
+        !env.get("hibernate.cache.queries", Boolean).get()
+        env.get("data-source.pooled", Boolean).get()
         env.get("data-source.password", String).get() == 'test'
-        env.get("data-source.jmx-export", boolean).get() == true
+        env.get("data-source.jmx-export", boolean).get()
         env.get("data-source.something", List).get() == [1,2]
 
 
