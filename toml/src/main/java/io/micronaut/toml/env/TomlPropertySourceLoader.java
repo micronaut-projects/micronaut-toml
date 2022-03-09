@@ -36,6 +36,7 @@ import java.util.Set;
  * <p>A {@link io.micronaut.context.env.PropertySourceLoader} that reads <tt>application.toml</tt> files if they exist.</p>
  *
  * @author Jonas Konrad
+ * @since 1.0.0
  */
 public class TomlPropertySourceLoader extends AbstractPropertySourceLoader {
     @Override

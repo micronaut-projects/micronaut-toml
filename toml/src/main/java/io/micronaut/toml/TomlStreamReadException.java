@@ -19,6 +19,11 @@ import io.micronaut.core.annotation.Internal;
 
 import java.io.IOException;
 
+/**
+ * TOML Stream Read Exception.
+ * @author Jonas Konrad
+ * @since 1.0.0
+ */
 @Internal
 public final class TomlStreamReadException
         extends IOException {
@@ -26,16 +31,31 @@ public final class TomlStreamReadException
 
     private final TomlLocation loc;
 
+    /**
+     *
+     * @param msg Exception Message
+     * @param loc TOML Location
+     */
     TomlStreamReadException(String msg, TomlLocation loc) {
         super(msg);
         this.loc = loc;
     }
 
+    /**
+     *
+     * @param msg Exception Message
+     * @param loc TOML Location
+     * @param rootCause Root Cause
+     */
     TomlStreamReadException(String msg, TomlLocation loc, Throwable rootCause) {
         super(msg, rootCause);
         this.loc = loc;
     }
 
+    /**
+     *
+     * @return Exception message.
+     */
     public String getOriginalMessage() {
         return super.getMessage();
     }

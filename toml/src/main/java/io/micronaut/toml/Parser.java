@@ -38,6 +38,7 @@ import java.util.stream.Collectors;
  * built by me (Jonas Konrad).
  *
  * @author Jonas Konrad
+ * @since 1.0.0
  */
 @Internal
 public final class Parser {
