@@ -15,6 +15,12 @@
  */
 package io.micronaut.toml;
 
+/**
+ * TOML Token
+ *
+ * @author Jonas Konrad
+ * @since 1.0.0
+ */
 enum TomlToken {
     UNQUOTED_KEY,
     DOT_SEP,
