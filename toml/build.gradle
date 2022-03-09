@@ -3,8 +3,6 @@ plugins {
     id "io.micronaut.internal.jflex"
 }
 
-group = 'io.micronaut.toml'
-
 dependencies {
     api mn.micronaut.json.core
     testImplementation mn.micronaut.jackson.databind
