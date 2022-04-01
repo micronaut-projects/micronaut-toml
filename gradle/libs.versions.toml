@@ -1,0 +1,4 @@
+[libraries]
+micronaut-json-core = { module = 'io.micronaut:micronaut-json-core' }
+micronaut-jackson-databind = { module = 'io.micronaut:micronaut-jackson-databind' }
+micronaut-test-junit5 = { module = 'io.micronaut.test:micronaut-test-junit5' }
