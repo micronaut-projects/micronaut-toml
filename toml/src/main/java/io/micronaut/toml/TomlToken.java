@@ -16,7 +16,7 @@
 package io.micronaut.toml;
 
 /**
- * TOML Token
+ * TOML Token.
  *
  * @author Jonas Konrad
  * @since 1.0.0
