@@ -1,5 +1,7 @@
+[versions]
+jetbrains-annotations = "16.0.2"
+jflex = "1.8.2"
+
 [libraries]
-micronaut-inject = { module = 'io.micronaut:micronaut-inject' }
-micronaut-json-core = { module = 'io.micronaut:micronaut-json-core' }
-micronaut-jackson-databind = { module = 'io.micronaut:micronaut-jackson-databind' }
-micronaut-test-junit5 = { module = 'io.micronaut.test:micronaut-test-junit5' }
+jetbrains-annotations = { module = "org.jetbrains:annotations", version.ref = "jetbrains-annotations" }
+jflex = { module = "de.jflex:jflex", version.ref = "jflex" }
