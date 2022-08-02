@@ -3,6 +3,11 @@ plugins {
     id "io.micronaut.internal.jflex"
 }
 
+repositories {  
+    mavenCentral()
+    maven { url "https://s01.oss.sonatype.org/content/repositories/snapshots/" }
+}
+
 dependencies {
     api libs.micronaut.json.core
     testImplementation libs.micronaut.jackson.databind
