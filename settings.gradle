@@ -16,3 +16,7 @@ rootProject.name = 'toml-parent'
 
 include 'toml-bom'
 include 'toml'
+
+micronautBuild {
+    importMicronautCatalog()
+}
