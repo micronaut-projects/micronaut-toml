@@ -4,7 +4,8 @@ plugins {
 }
 
 dependencies {
-    api libs.micronaut.json.core
+    api libs.micronaut.inject
+    implementation libs.micronaut.json.core
     testImplementation libs.micronaut.jackson.databind
     testImplementation libs.micronaut.test.junit5
     testImplementation 'org.jetbrains:annotations:16.0.2'
