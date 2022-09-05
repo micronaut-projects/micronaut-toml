@@ -1,5 +1,5 @@
 [versions]
-jetbrains-annotations = "16.0.2"
+jetbrains-annotations = "23.0.0"
 jflex = "1.8.2"
 
 [libraries]
