@@ -10,8 +10,6 @@ dependencies {
     implementation 'de.jflex:jflex:1.8.2'
 }
 
-
-
 gradlePlugin {
     plugins {
         jflex {

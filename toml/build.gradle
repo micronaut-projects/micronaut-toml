@@ -1,16 +1,11 @@
 plugins {
-    id "io.micronaut.build.internal.module"
+    id "io.micronaut.build.internal.toml-module"
     id "io.micronaut.internal.jflex"
-}
-
-repositories {
-    mavenCentral()
-    maven { url "https://s01.oss.sonatype.org/content/repositories/snapshots/" }
 }
 
 dependencies {
     api libs.micronaut.json.core
     testImplementation libs.micronaut.jackson.databind
     testImplementation libs.micronaut.test.junit5
-    testImplementation 'org.jetbrains:annotations:16.0.2'
+    testImplementation libs.jetbrains.annotations
 }
