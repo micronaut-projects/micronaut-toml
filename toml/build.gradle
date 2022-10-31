@@ -9,8 +9,9 @@ repositories {
 }
 
 dependencies {
-    api libs.micronaut.json.core
-    testImplementation libs.micronaut.jackson.databind
-    testImplementation libs.micronaut.test.junit5
-    testImplementation 'org.jetbrains:annotations:16.0.2'
+    api mn.micronaut.inject
+    implementation mn.micronaut.json.core
+    testImplementation mn.micronaut.jackson.databind
+    testImplementation mn.micronaut.test.junit5
+    testImplementation libs.jetbrains.annotations
 }
