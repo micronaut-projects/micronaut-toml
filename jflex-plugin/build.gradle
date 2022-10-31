@@ -10,8 +10,6 @@ dependencies {
     implementation libs.jflex
 }
 
-
-
 gradlePlugin {
     plugins {
         jflex {
