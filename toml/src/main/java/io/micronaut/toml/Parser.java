@@ -263,36 +263,40 @@ public final class Parser {
                 start += 2;
                 length -= 2;
                 String text = new String(buffer, start, length);
-                // note: we parse all these as unsigned. Hence the weird int limits.
-                // hex
-                if (baseChar == 'x') {
-                    if (length <= 31 / 4) {
-                        return JsonNode.createNumberNode(Integer.parseInt(text, 16));
-                    } else if (length <= 63 / 4) {
-                        return JsonNode.createNumberNode(Long.parseLong(text, 16));
-                    } else {
-                        return JsonNode.createNumberNode(new BigInteger(text, 16));
+                try {
+                    // note: we parse all these as unsigned. Hence the weird int limits.
+                    // hex
+                    if (baseChar == 'x') {
+                        if (length <= 31 / 4) {
+                            return JsonNode.createNumberNode(Integer.parseInt(text, 16));
+                        } else if (length <= 63 / 4) {
+                            return JsonNode.createNumberNode(Long.parseLong(text, 16));
+                        } else {
+                            return JsonNode.createNumberNode(new BigInteger(text, 16));
+                        }
                     }
-                }
-                // octal
-                if (baseChar == 'o') {
-                    // this is a bit conservative, but who uses octal anyway?
-                    if (length <= 31 / 3) {
-                        return JsonNode.createNumberNode(Integer.parseInt(text, 8));
-                    } else if (text.length() <= 63 / 3) {
-                        return JsonNode.createNumberNode(Long.parseLong(text, 8));
-                    } else {
-                        return JsonNode.createNumberNode(new BigInteger(text, 8));
+                    // octal
+                    if (baseChar == 'o') {
+                        // this is a bit conservative, but who uses octal anyway?
+                        if (length <= 31 / 3) {
+                            return JsonNode.createNumberNode(Integer.parseInt(text, 8));
+                        } else if (text.length() <= 63 / 3) {
+                            return JsonNode.createNumberNode(Long.parseLong(text, 8));
+                        } else {
+                            return JsonNode.createNumberNode(new BigInteger(text, 8));
+                        }
                     }
-                }
-                // binary
-                assert baseChar == 'b';
-                if (length <= 31) {
-                    return JsonNode.createNumberNode(Integer.parseUnsignedInt(text, 2));
-                } else if (length <= 63) {
-                    return JsonNode.createNumberNode(Long.parseUnsignedLong(text, 2));
-                } else {
-                    return JsonNode.createNumberNode(new BigInteger(text, 2));
+                    // binary
+                    assert baseChar == 'b';
+                    if (length <= 31) {
+                        return JsonNode.createNumberNode(Integer.parseUnsignedInt(text, 2));
+                    } else if (length <= 63) {
+                        return JsonNode.createNumberNode(Long.parseUnsignedLong(text, 2));
+                    } else {
+                        return JsonNode.createNumberNode(new BigInteger(text, 2));
+                    }
+                } catch (NumberFormatException e) {
+                    throw errorContext.atPosition(lexer).invalidNumber(e);
                 }
             }
         }
@@ -330,7 +334,11 @@ public final class Parser {
                 return JsonNode.createNumberNode(v);
             }
         }
-        return JsonNode.createNumberNode(new BigInteger(bufferString));
+        try {
+            return JsonNode.createNumberNode(new BigInteger(bufferString));
+        } catch (NumberFormatException e) {
+            throw errorContext.atPosition(lexer).invalidNumber(e);
+        }
     }
 
     private JsonNode parseFloat(int nextState) throws IOException {
@@ -341,8 +349,12 @@ public final class Parser {
         } else if (text.endsWith("inf")) {
             return JsonNode.createNumberNode(text.startsWith("-") ? Float.NEGATIVE_INFINITY : Float.POSITIVE_INFINITY);
         } else {
-            BigDecimal dec = new BigDecimal(text);
-            return JsonNode.createNumberNode(dec);
+            try {
+                BigDecimal dec = new BigDecimal(text);
+                return JsonNode.createNumberNode(dec);
+            } catch (NumberFormatException e) {
+                throw errorContext.atPosition(lexer).invalidNumber(e);
+            }
         }
     }
 
