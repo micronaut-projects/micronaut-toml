@@ -256,7 +256,12 @@ public final class Parser {
             }
         }
 
+        JsonNode v = parseInt0(buffer, start, length);
         pollExpected(TomlToken.INTEGER, nextState);
+        return v;
+    }
+
+    private JsonNode parseInt0(char[] buffer, int start, int length) throws TomlStreamReadException {
         if (length > 2) {
             char baseChar = buffer[start + 1];
             if (baseChar == 'x' || baseChar == 'o' || baseChar == 'b') {
