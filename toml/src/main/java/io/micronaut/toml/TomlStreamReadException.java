@@ -135,8 +135,8 @@ public final class TomlStreamReadException
                 return new TomlStreamReadException(message, location);
             }
 
-            TomlStreamReadException outOfBounds(NumberFormatException cause) {
-                return new TomlStreamReadException("Number out of bounds", location, cause);
+            TomlStreamReadException invalidNumber(NumberFormatException cause) {
+                return new TomlStreamReadException("Invalid number representation", location, cause);
             }
         }
     }

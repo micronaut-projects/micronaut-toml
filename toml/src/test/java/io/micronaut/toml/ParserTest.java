@@ -2,9 +2,6 @@ package io.micronaut.toml;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.json.JsonReadFeature;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.micronaut.jackson.core.tree.JsonNodeTreeCodec;
 import io.micronaut.json.JsonStreamConfig;
 import io.micronaut.json.tree.JsonNode;
@@ -12,10 +9,8 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.intellij.lang.annotations.Language;
 import org.junit.Assert;
-import org.junit.Rule;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.rules.ExpectedException;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -24,11 +19,6 @@ import java.util.Map;
 
 @SuppressWarnings("OctalInteger")
 public class ParserTest {
-    private static final ObjectMapper jsonMapper = JsonMapper.builder()
-            .enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS)
-            .enable(JsonReadFeature.ALLOW_NON_NUMERIC_NUMBERS)
-            .build();
-
     static JsonNode json(@Language("json") String json) throws IOException {
         return JsonNodeTreeCodec.getInstance()
                 .withConfig(JsonStreamConfig.DEFAULT.withUseBigDecimalForFloats(true))
@@ -36,16 +26,8 @@ public class ParserTest {
     }
 
     static JsonNode toml(@Language("toml") String toml) throws IOException {
-        return toml(0, toml);
-    }
-
-    static JsonNode toml(int opts, @Language("toml") String toml) throws IOException {
         return Parser.parse(toml);
     }
-
-    @SuppressWarnings("deprecation")
-    @Rule
-    public final ExpectedException expectedException = ExpectedException.none();
 
     @Test
     public void unclosed() throws IOException {
