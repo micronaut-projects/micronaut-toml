@@ -17,13 +17,7 @@ rootProject.name = 'toml-parent'
 include 'toml-bom'
 include 'toml'
 
-dependencyResolutionManagement {
-    repositories {
-        mavenCentral()
-        maven { url "https://s01.oss.sonatype.org/content/repositories/snapshots/" }
-    }
-}
-
 micronautBuild {
+    addSnapshotRepository()
     importMicronautCatalog()
 }
