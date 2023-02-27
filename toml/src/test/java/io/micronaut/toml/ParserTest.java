@@ -15,7 +15,11 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.StreamSupport;
 
 @SuppressWarnings("OctalInteger")
 public class ParserTest {
@@ -1018,12 +1022,26 @@ public class ParserTest {
     }
 
     @Test
-    // https://github.com/micronaut-projects/micronaut-toml/pull/95
+        // https://github.com/micronaut-projects/micronaut-toml/pull/95
     void longInput() {
         Assertions.assertDoesNotThrow(() -> toml(
             "foo = \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"\n" +
                 "bar = 678\n" +
                 "baz = \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\""
         ));
+    }
+
+    @Test
+    void keyOrder() throws IOException {
+        List<String> keys = IntStream.range(0, 100).mapToObj(i -> "k" + i).collect(Collectors.toList());
+        StringBuilder toml = new StringBuilder();
+        for (String key : keys) {
+            toml.append(key).append("=\"foo\"\n");
+        }
+        JsonNode node = toml(toml.toString());
+        Assertions.assertEquals(
+            keys,
+            StreamSupport.stream(node.entries().spliterator(), false).map(Map.Entry::getKey).collect(Collectors.toList())
+        );
     }
 }

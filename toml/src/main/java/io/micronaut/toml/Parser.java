@@ -504,8 +504,14 @@ public final class Parser {
 
         @Override
         public JsonNode build() {
-            return JsonNode.createObjectNode(nodes.entrySet().stream()
-                    .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().build())));
+            Map<String, JsonNode> baked = new LinkedHashMap<>();
+            for (Map.Entry<String, TomlNodeBuilder> entry : nodes.entrySet()) {
+                JsonNode prev = baked.put(entry.getKey(), entry.getValue().build());
+                if (prev != null) {
+                    throw new AssertionError("duplicate key, should have been caught earlier");
+                }
+            }
+            return JsonNode.createObjectNode(baked);
         }
 
         public TomlObjectBuilder putObject(String key) {
