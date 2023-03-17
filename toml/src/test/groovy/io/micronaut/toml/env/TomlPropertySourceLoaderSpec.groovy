@@ -25,7 +25,6 @@ class TomlPropertySourceLoaderSpec extends Specification {
             @Override
             protected SoftServiceLoader<PropertySourceLoader> readPropertySourceLoaders() {
                 GroovyClassLoader gcl = new GroovyClassLoader()
-                gcl.addClass(JsonPropertySourceLoader)
                 gcl.addURL(JsonPropertySourceLoader.getResource("/META-INF/services/io.micronaut.context.env.PropertySourceLoader"))
                 return new SoftServiceLoader<PropertySourceLoader>(PropertySourceLoader, gcl)
             }
