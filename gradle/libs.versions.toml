@@ -7,7 +7,7 @@ spock = "2.3-groovy-4.0"
 
 jetbrains-annotations = "23.1.0"
 jflex = "1.8.2"
-junit = "5.8.2"
+junit = "5.9.2"
 
 [libraries]
 jetbrains-annotations = { module = "org.jetbrains:annotations", version.ref = "jetbrains-annotations" }
