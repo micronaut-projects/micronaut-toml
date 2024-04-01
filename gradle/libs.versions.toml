@@ -7,7 +7,6 @@ spock = "2.3-groovy-4.0"
 
 jetbrains-annotations = "24.1.0"
 jflex = "1.9.1"
-junit = "5.10.1"
 
 [libraries]
 # Core
@@ -15,4 +14,4 @@ micronaut-core = { module = 'io.micronaut:micronaut-core-bom', version.ref = 'mi
 
 jetbrains-annotations = { module = "org.jetbrains:annotations", version.ref = "jetbrains-annotations" }
 jflex = { module = "de.jflex:jflex", version.ref = "jflex" }
-junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
+junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine" }
