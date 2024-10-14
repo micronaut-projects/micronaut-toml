@@ -5,7 +5,7 @@ micronaut-test = "4.0.0"
 groovy = "4.0.13"
 spock = "2.3-groovy-4.0"
 
-jetbrains-annotations = "24.1.0"
+jetbrains-annotations = "26.0.1"
 jflex = "1.9.1"
 
 [libraries]
