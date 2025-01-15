@@ -7,6 +7,7 @@ spock = "2.3-groovy-4.0"
 
 jetbrains-annotations = "26.0.1"
 jflex = "1.9.1"
+sonatype-scan = "3.0.0"
 
 [libraries]
 # Core
@@ -15,3 +16,4 @@ micronaut-core = { module = 'io.micronaut:micronaut-core-bom', version.ref = 'mi
 jetbrains-annotations = { module = "org.jetbrains:annotations", version.ref = "jetbrains-annotations" }
 jflex = { module = "de.jflex:jflex", version.ref = "jflex" }
 junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine" }
+sonatype-scan = { module = "org.sonatype.gradle.plugins:scan-gradle-plugin", version.ref = "sonatype-scan" }
