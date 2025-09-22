@@ -7,7 +7,7 @@ spock = "2.3-groovy-4.0"
 
 jetbrains-annotations = "26.0.2"
 jflex = "1.9.1"
-sonatype-scan = "3.0.0"
+sonatype-scan = "3.1.4"
 
 [libraries]
 # Core
