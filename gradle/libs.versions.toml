@@ -14,4 +14,3 @@ micronaut-core = { module = 'io.micronaut:micronaut-core-bom', version.ref = 'mi
 
 jetbrains-annotations = { module = "org.jetbrains:annotations", version.ref = "jetbrains-annotations" }
 jflex = { module = "de.jflex:jflex", version.ref = "jflex" }
-junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine" }
