@@ -497,7 +497,7 @@ public final class Parser {
         }
     }
 
-    private static class TomlObjectBuilder implements TomlNodeBuilder {
+    private static final class TomlObjectBuilder implements TomlNodeBuilder {
         final Map<String, TomlNodeBuilder> nodes = new LinkedHashMap<>();
         boolean closed = false;
         boolean defined = false;
@@ -549,7 +549,7 @@ public final class Parser {
         }
     }
 
-    private static class TomlArrayBuilder implements TomlNodeBuilder {
+    private static final class TomlArrayBuilder implements TomlNodeBuilder {
         final List<TomlNodeBuilder> nodes = new ArrayList<>();
         boolean closed = false;
 
