@@ -8,7 +8,6 @@ import io.micronaut.json.tree.JsonNode;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.intellij.lang.annotations.Language;
-import org.junit.Assert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -44,24 +43,24 @@ public class ParserTest {
 
     @Test
     public void keyValuePair() throws IOException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 json("{\"key\": \"value\"}"),
                 toml("key = \"value\""));
     }
 
     @Test
     public void unspecified() throws IOException {
-        Assert.assertThrows(TomlStreamReadException.class, () -> toml("key ="));
+        Assertions.assertThrows(TomlStreamReadException.class, () -> toml("key ="));
     }
 
     @Test
     public void singleLine() throws IOException {
-        Assert.assertThrows(TomlStreamReadException.class, () -> toml("first = \"Tom\" last = \"Preston-Werner\""));
+        Assertions.assertThrows(TomlStreamReadException.class, () -> toml("first = \"Tom\" last = \"Preston-Werner\""));
     }
 
     @Test
     public void comment() throws IOException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 json("{\"key\": \"value\", \"another\": \"# This is not a comment\"}"),
                 toml("# This is a full-line comment\n" +
                         "key = \"value\"  # This is a comment at the end of a line\n" +
@@ -70,7 +69,7 @@ public class ParserTest {
 
     @Test
     public void bareKeys() throws IOException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 json("{\"key\": \"value\", \"bare_key\": \"value\", \"bare-key\": \"value\", \"1234\": \"value\"}"),
                 toml("key = \"value\"\n" +
                         "bare_key = \"value\"\n" +
@@ -80,7 +79,7 @@ public class ParserTest {
 
     @Test
     public void quotedKeys() throws IOException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 json("{\"127.0.0.1\": \"value\", \"character encoding\": \"value\", \"ʎǝʞ\": \"value\", \"key2\": \"value\", \"quoted \\\"value\\\"\": \"value\"}"),
                 toml("\"127.0.0.1\" = \"value\"\n" +
                         "\"character encoding\" = \"value\"\n" +
@@ -91,18 +90,18 @@ public class ParserTest {
 
     @Test
     public void bareKeyNonEmpty() throws IOException {
-        Assert.assertThrows(TomlStreamReadException.class, () -> toml("= \"no key name\""));
+        Assertions.assertThrows(TomlStreamReadException.class, () -> toml("= \"no key name\""));
     }
 
     @Test
     public void quotedKeyEmpty() throws IOException {
-        Assert.assertEquals(json("{\"\": \"blank\"}"), toml("\"\" = \"blank\""));
-        Assert.assertEquals(json("{\"\": \"blank\"}"), toml("'' = 'blank'"));
+        Assertions.assertEquals(json("{\"\": \"blank\"}"), toml("\"\" = \"blank\""));
+        Assertions.assertEquals(json("{\"\": \"blank\"}"), toml("'' = 'blank'"));
     }
 
     @Test
     public void dottedKeys() throws IOException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 json("{\n" +
                         "  \"name\": \"Orange\",\n" +
                         "  \"physical\": {\n" +
@@ -121,7 +120,7 @@ public class ParserTest {
 
     @Test
     public void dottedKeysWhitespace() throws IOException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 json("{\"fruit\": {\"name\": \"banana\", \"color\": \"yellow\", \"flavor\": \"banana\"}}"),
                 toml("fruit.name = \"banana\"     # this is best practice\n" +
                         "fruit. color = \"yellow\"    # same as fruit.color\n" +
@@ -146,7 +145,7 @@ public class ParserTest {
 
     @Test
     public void keyMixed() throws IOException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 json("{\"fruit\": {\"apple\": {\"smooth\": true}, \"orange\": 2}}"),
                 toml("# This makes the key \"fruit\" into a table.\n" +
                         "fruit.apple.smooth = true\n" +
@@ -170,7 +169,7 @@ public class ParserTest {
 
     @Test
     public void outOfOrder() throws IOException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 json("{\"apple\": {\"type\": \"fruit\",\"skin\": \"thin\", \"color\": \"red\"}, \"orange\": {\"type\": \"fruit\", \"skin\": \"thick\", \"color\": \"orange\"}}"),
                 toml("apple.type = \"fruit\"\n" +
                         "orange.type = \"fruit\"\n" +
@@ -185,7 +184,7 @@ public class ParserTest {
 
     @Test
     public void inOrder() throws IOException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 json("{\"apple\": {\"type\": \"fruit\",\"skin\": \"thin\", \"color\": \"red\"}, \"orange\": {\"type\": \"fruit\", \"skin\": \"thick\", \"color\": \"orange\"}}"),
                 toml("apple.type = \"fruit\"\n" +
                         "apple.skin = \"thin\"\n" +
@@ -199,7 +198,7 @@ public class ParserTest {
 
     @Test
     public void numberDottedKey() throws IOException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 json("{ \"3\": { \"14159\": \"pi\" } }"),
                 // intellij doesn't like this one :)
                 toml("3.14159 = \"pi\"")
@@ -208,7 +207,7 @@ public class ParserTest {
 
     @Test
     public void stringBasic() throws IOException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 json("{ \"str\": \"I'm a string. \\\"You can quote me\\\". Name\\tJosé\\nLocation\\tSF.\" }"),
                 toml("str = \"I'm a string. \\\"You can quote me\\\". Name\\tJos\\u00E9\\nLocation\\tSF.\"")
         );
@@ -216,7 +215,7 @@ public class ParserTest {
 
     @Test
     public void multiLineBasic() throws IOException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 json("{\"str1\": \"Roses are red\\nViolets are blue\"}"),
                 toml("str1 = \"\"\"\n" +
                         "Roses are red\n" +
@@ -226,7 +225,7 @@ public class ParserTest {
 
     @Test
     public void multiLineEscapeNl() throws IOException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 json("{\"str1\": \"The quick brown fox jumps over the lazy dog.\",\"str2\": \"The quick brown fox jumps over the lazy dog.\",\"str3\": \"The quick brown fox jumps over the lazy dog.\"}"),
                 toml("str1 = \"The quick brown fox jumps over the lazy dog.\"\n" +
                         "\n" +
@@ -247,7 +246,7 @@ public class ParserTest {
 
     @Test
     public void escapedQuotes() throws IOException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 json("{\"str4\": \"Here are two quotation marks: \\\"\\\". Simple enough.\", \"str5\": \"Here are three quotation marks: \\\"\\\"\\\".\", \"str6\": \"Here are fifteen quotation marks: \\\"\\\"\\\"\\\"\\\"\\\"\\\"\\\"\\\"\\\"\\\"\\\"\\\"\\\"\\\".\", \"str7\": \"\\\"This,\\\" she said, \\\"is just a pointless statement.\\\"\"}"),
                 toml("str4 = \"\"\"Here are two quotation marks: \"\". Simple enough.\"\"\"\n" +
                         "# str5 = \"\"\"Here are three quotation marks: \"\"\".\"\"\"  # INVALID\n" +
@@ -268,7 +267,7 @@ public class ParserTest {
 
     @Test
     public void literalStrings() throws IOException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 json("{\"winpath\": \"C:\\\\Users\\\\nodejs\\\\templates\", \"winpath2\": \"\\\\\\\\ServerX\\\\admin$\\\\system32\\\\\", \"quoted\": \"Tom \\\"Dubs\\\" Preston-Werner\", \"regex\": \"<\\\\i\\\\c*\\\\s*>\"}"),
                 toml("winpath  = 'C:\\Users\\nodejs\\templates'\n" +
                         "winpath2 = '\\\\ServerX\\admin$\\system32\\'\n" +
@@ -279,7 +278,7 @@ public class ParserTest {
 
     @Test
     public void multiLineLiteral() throws IOException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 json("{\"regex2\": \"I [dw]on't need \\\\d{2} apples\", \"lines\": \"The first newline is\\ntrimmed in raw strings.\\n   All other whitespace\\n   is preserved.\\n\"}"),
                 toml("regex2 = '''I [dw]on't need \\d{2} apples'''\n" +
                         "lines  = '''\n" +
@@ -293,7 +292,7 @@ public class ParserTest {
 
     @Test
     public void multiLineLiteralQuotes() throws IOException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 json("{\"quot15\": \"Here are fifteen quotation marks: \\\"\\\"\\\"\\\"\\\"\\\"\\\"\\\"\\\"\\\"\\\"\\\"\\\"\\\"\\\"\", \"apos15\": \"Here are fifteen apostrophes: '''''''''''''''\", \"str\": \"'That,' she said, 'is still pointless.'\"}"),
                 toml("quot15 = '''Here are fifteen quotation marks: \"\"\"\"\"\"\"\"\"\"\"\"\"\"\"'''\n" +
                         "apos15 = \"Here are fifteen apostrophes: '''''''''''''''\"\n" +
@@ -303,7 +302,7 @@ public class ParserTest {
 
     @Test
     public void integer() throws IOException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 json("{\"int1\": 99, \"int2\": 42, \"int3\": 0, \"int4\": -17}"),
                 toml("int1 = +99\n" +
                         "int2 = 42\n" +
@@ -314,7 +313,7 @@ public class ParserTest {
 
     @Test
     public void integerUnderscore() throws IOException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 json("{\"int5\": 1000, \"int6\": 5349221, \"int7\": 5349221, \"int8\": 12345}"),
                 toml("int5 = 1_000\n" +
                         "int6 = 5_349_221\n" +
@@ -325,7 +324,7 @@ public class ParserTest {
 
     @Test
     public void integerBase() throws IOException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 json("{\"hex1\": 3735928559, \"hex2\": 3735928559, \"hex3\": 3735928559, \"oct1\": 342391, \"oct2\": 493, \"bin1\": 214}"),
                 toml("# hexadecimal with prefix `0x`\n" +
                         "hex1 = 0xDEADBEEF\n" +
@@ -343,7 +342,7 @@ public class ParserTest {
 
     @Test
     public void floats() throws IOException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 json("{\"flt1\": 1.0, \"flt2\": 3.1415, \"flt3\": -0.01, \"flt4\": 5.0e22, \"flt5\": 1e06, \"flt6\": -2e-2, \"flt7\": 6.626e-34}"),
                 toml("# fractional\n" +
                         "flt1 = +1.0\n" +
@@ -384,7 +383,7 @@ public class ParserTest {
 
     @Test
     public void floatUnderscore() throws IOException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 json("{\"flt8\": 224617.445991228}"),
                 toml("flt8 = 224_617.445_991_228")
         );
@@ -399,7 +398,7 @@ public class ParserTest {
         expected.put("sf4", JsonNode.createNumberNode(Float.NaN));
         expected.put("sf5", JsonNode.createNumberNode(Float.NaN));
         expected.put("sf6", JsonNode.createNumberNode(Float.NaN));
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 JsonNode.createObjectNode(expected),
                 toml("# infinity\n" +
                         "sf1 = inf  # positive infinity\n" +
@@ -415,7 +414,7 @@ public class ParserTest {
 
     @Test
     public void booleans() throws IOException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 json("{\"bool1\": true, \"bool2\": false}"),
                 toml("bool1 = true\n" +
                         "bool2 = false\n" +
@@ -425,7 +424,7 @@ public class ParserTest {
 
     @Test
     public void odt() throws IOException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 json("{\"odt1\": \"1979-05-27T07:32:00Z\", \"odt2\": \"1979-05-27T00:32:00-07:00\", \"odt3\": \"1979-05-27T00:32:00.999999-07:00\", \"odt4\": \"1979-05-27T07:32:00Z\"}"),
                 toml("odt1 = 1979-05-27T07:32:00Z\n" +
                         "odt2 = 1979-05-27T00:32:00-07:00\n" +
@@ -436,7 +435,7 @@ public class ParserTest {
 
     @Test
     public void ldt() throws IOException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 json("{\"ldt1\": \"1979-05-27T07:32:00\", \"ldt2\": \"1979-05-27T00:32:00.999999\"}"),
                 toml("ldt1 = 1979-05-27T07:32:00\n" +
                         "ldt2 = 1979-05-27T00:32:00.999999")
@@ -445,7 +444,7 @@ public class ParserTest {
 
     @Test
     public void ld() throws IOException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 json("{\"ld1\": \"1979-05-27\"}"),
                 toml("ld1 = 1979-05-27")
         );
@@ -453,7 +452,7 @@ public class ParserTest {
 
     @Test
     public void lt() throws IOException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 json("{\"lt1\": \"07:32:00\", \"lt2\": \"00:32:00.999999\"}"),
                 toml("lt1 = 07:32:00\n" +
                         "lt2 = 00:32:00.999999")
@@ -462,7 +461,7 @@ public class ParserTest {
 
     @Test
     public void array() throws IOException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 json("{\"integers\": [1,2,3], \"colors\": [\"red\",\"yellow\",\"green\"], \"nested_arrays_of_ints\": [ [ 1, 2 ], [3, 4, 5] ], \"nested_mixed_array\": [ [ 1, 2 ], [\"a\", \"b\", \"c\"] ], \"string_array\": [ \"all\", \"strings\", \"are the same\", \"type\" ],\n" +
                         "  \"numbers\": " +
                         "[ 0.1, 0.2, 0.5, 1, 2, 5 ], \"contributors\": [\"Foo Bar <foo@example.com>\", { \"name\": \"Baz Qux\",\n" +
@@ -488,7 +487,7 @@ public class ParserTest {
 
     @Test
     public void arrayMultiLine() throws IOException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 json("{\"integers2\": [1,2,3]," +
                         "\"integers3\": [1,2]" +
                         "}"),
@@ -505,7 +504,7 @@ public class ParserTest {
 
     @Test
     public void table() throws IOException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 json("{\"table\": {}}"),
                 toml("[table]")
         );
@@ -513,7 +512,7 @@ public class ParserTest {
 
     @Test
     public void table2() throws IOException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 json("{\"table-1\": {\"key1\": \"some string\", \"key2\": 123}, \"table-2\": {\"key1\": \"another string\", \"key2\": 456}}"),
                 toml("[table-1]\n" +
                         "key1 = \"some string\"\n" +
@@ -527,7 +526,7 @@ public class ParserTest {
 
     @Test
     public void tableQuoted() throws IOException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 json("{\"dog\": {\"tater.man\": {\"type\": {\"name\": \"pug\"}}}}"),
                 toml("[dog.\"tater.man\"]\n" +
                         "type.name = \"pug\"")
@@ -536,7 +535,7 @@ public class ParserTest {
 
     @Test
     public void tableWhitespace() throws IOException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 json("{\"a\": {\"b\": {" +
                         "\"c\": {}" +
                         "}}, \"d\": {\"e\": {\"f\": {}}},\"g\": {\"h\": {\"i\": {}}},\"j\": {\"ʞ\": {\"l\": {}}}}"),
@@ -549,7 +548,7 @@ public class ParserTest {
 
     @Test
     public void order() throws IOException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 json("{\"x\": {\"y\": {" +
                         "\"z\": {\"w\": {}}" +
                         "}}}"),
@@ -586,7 +585,7 @@ public class ParserTest {
 
     @Test
     public void tableOutOfOrder() throws IOException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 json("{\"fruit\": {\"apple\": {}, \"orange\": {}}, \"animal\": {}}"),
                 toml("[fruit.apple]\n" +
                         "[animal]\n" +
@@ -596,7 +595,7 @@ public class ParserTest {
 
     @Test
     public void tableInOrder() throws IOException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 json("{\"fruit\": {\"apple\": {}, \"orange\": {}}, \"animal\": {}}"),
                 toml("[fruit.apple]\n" +
                         "[animal]\n" +
@@ -606,7 +605,7 @@ public class ParserTest {
 
     @Test
     public void rootTable() throws IOException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 json("{\"name\": \"Fido\", \"breed\": \"pug\", \"owner\": {\"name\": \"Regina Dogman\"}}"),
                 toml("# Top-level table begins.\n" +
                         "name = \"Fido\"\n" +
@@ -620,7 +619,7 @@ public class ParserTest {
 
     @Test
     public void dottedDefinesTable() throws IOException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 json("{\"fruit\": {\"apple\": {\"color\": \"red\", " +
                         "\"taste\": {\"sweet\": true}" +
                         "}}}"),
@@ -660,7 +659,7 @@ public class ParserTest {
 
     @Test
     public void dottedSubTable() throws IOException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 json("{\"fruit\": {\"apple\": {\"color\": \"red\", " +
                         "\"taste\": {\"sweet\": true}, \"texture\": {\"smooth\": true}" +
                         "}}}"),
@@ -678,7 +677,7 @@ public class ParserTest {
 
     @Test
     public void inlineTable() throws IOException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 json("{\"name\": {\"first\": \"Tom\", \"last\": \"Preston-Werner\"}, \"point\": {\"x\": 1, \"y\": 2}, \"animal\": {\"type\": {\"name\": \"pug\"}}}"),
                 toml("name = { first = \"Tom\", last = \"Preston-Werner\" }\n" +
                         "point = { x = 1, y = 2 }\n" +
@@ -706,7 +705,7 @@ public class ParserTest {
 
     @Test
     public void arrayTable() throws IOException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 json("{\n" +
                         "  \"products\": [\n" +
                         "    { \"name\": \"Hammer\", \"sku\": 738594937 },\n" +
@@ -730,7 +729,7 @@ public class ParserTest {
 
     @Test
     public void arrayTableDotted() throws IOException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 json("{\n" +
                         "  \"fruits\": [\n" +
                         "    {\n" +
@@ -833,7 +832,7 @@ public class ParserTest {
 
     @Test
     public void points() throws IOException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 json("{\"points\":  [ { \"x\":1, \"y\":2, \"z\":3 },\n" +
                         "  { \"x\":7, \"y\":8, \"z\":9 },\n" +
                         "  { \"x\":2, \"y\":4, \"z\": 8}]}"),
@@ -855,7 +854,7 @@ public class ParserTest {
 
     @Test
     public void inlineTableEmpty() throws IOException {
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 json("{\"foo\": {}}"),
                 toml("foo = {}")
         );
@@ -872,7 +871,7 @@ public class ParserTest {
     @Test
     public void extendedUnicodeEscape() throws IOException {
         // 🆒
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 json("{\"foo\": \"\\uD83C\\uDD92\"}"),
                 toml("foo = \"\\U0001f192\"")
         );
@@ -891,7 +890,7 @@ public class ParserTest {
         expected.put("int1", JsonNode.createNumberNode(99));
         expected.put("int2", JsonNode.createNumberNode(4242424242L));
         expected.put("int3", JsonNode.createNumberNode(new BigInteger("171717171717171717171717")));
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 JsonNode.createObjectNode(expected),
                 toml("int1 = +99\n" +
                         "int2 = 4242424242\n" +
@@ -907,7 +906,7 @@ public class ParserTest {
         expected.put("hex3", JsonNode.createNumberNode(0xddead_beefL));
         expected.put("oct1", JsonNode.createNumberNode(01234567777777L));
         expected.put("bin1", JsonNode.createNumberNode(0b11010110101010101010101010101010101010L));
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 JsonNode.createObjectNode(expected),
                 toml("hex1 = 0xdDEADBEEF\n" +
                         "hex2 = 0xddeadbeef\n" +
@@ -925,7 +924,7 @@ public class ParserTest {
         expected.put("hex3", JsonNode.createNumberNode(new BigInteger("DDEADBEEFDDEADBEEF", 16)));
         expected.put("oct1", JsonNode.createNumberNode(new BigInteger("12345677777771234567777777", 8)));
         expected.put("bin1", JsonNode.createNumberNode(new BigInteger("1101011010101010101010101010101010101011010110101010101010101010101010101010", 2)));
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 JsonNode.createObjectNode(expected),
                 toml("hex1 = 0xDDEADBEEFDDEADBEEF\n" +
                         "hex2 = 0xddeadbeefddeadbeef\n" +
@@ -941,7 +940,7 @@ public class ParserTest {
         // this is the same test as above, except with explicit java.time deserialization
         int options = TomlReadFeature.PARSE_JAVA_TIME.getMask();
 
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 JsonNodeFactory.instance.objectNode()
                         .<ObjectNode>set("odt1", JsonNodeFactory.instance.pojoNode(OffsetDateTime.parse("1979-05-27T07:32:00Z")))
                         .<ObjectNode>set("odt2", JsonNodeFactory.instance.pojoNode(OffsetDateTime.parse("1979-05-27T00:32:00-07:00")))
@@ -953,7 +952,7 @@ public class ParserTest {
                                 "odt3 = 1979-05-27T00:32:00.999999-07:00\n" +
                                 "odt4 = 1979-05-27 07:32:00Z")
         );
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 JsonNodeFactory.instance.objectNode()
                         .<ObjectNode>set("ldt1", JsonNodeFactory.instance.pojoNode(LocalDateTime.parse("1979-05-27T07:32:00")))
                         .<ObjectNode>set("ldt2", JsonNodeFactory.instance.pojoNode(LocalDateTime.parse("1979-05-27T00:32:00.999999"))),
@@ -961,12 +960,12 @@ public class ParserTest {
                         "ldt1 = 1979-05-27T07:32:00\n" +
                                 "ldt2 = 1979-05-27T00:32:00.999999")
         );
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 JsonNodeFactory.instance.objectNode()
                         .set("ld1", JsonNodeFactory.instance.pojoNode(LocalDate.parse("1979-05-27"))),
                 toml(options, "ld1 = 1979-05-27")
         );
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 JsonNodeFactory.instance.objectNode()
                         .<ObjectNode>set("lt1", JsonNodeFactory.instance.pojoNode(LocalTime.parse("07:32:00")))
                         .<ObjectNode>set("lt2", JsonNodeFactory.instance.pojoNode(LocalTime.parse("00:32:00.999999"))),
