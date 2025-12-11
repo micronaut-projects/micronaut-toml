@@ -1,7 +1,0 @@
-[dataSource]
-username = "sa"
-password = "secret"
-jmxExport = true
-
-[hibernate]
-cacheQueries = false

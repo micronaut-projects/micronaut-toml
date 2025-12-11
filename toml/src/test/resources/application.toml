@@ -1,0 +1,9 @@
+[hibernate]
+cache.queries = false
+
+[dataSource]
+pooled = true
+driverClassName = "org.h2.Driver"
+username = "sa"
+password = "test"
+something = [1, 2]

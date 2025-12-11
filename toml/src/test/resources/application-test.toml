@@ -1,0 +1,5 @@
+[dataSource]
+jmxExport = true
+username = "sa"
+password = "test"
+
