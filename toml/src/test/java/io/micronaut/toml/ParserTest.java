@@ -1,7 +1,7 @@
 package io.micronaut.toml;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.json.JsonReadFeature;
+import tools.jackson.core.json.JsonFactory;
+import tools.jackson.core.json.JsonReadFeature;
 import io.micronaut.jackson.core.tree.JsonNodeTreeCodec;
 import io.micronaut.json.JsonStreamConfig;
 import io.micronaut.json.tree.JsonNode;
