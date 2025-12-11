@@ -1,46 +1,24 @@
 package io.micronaut.toml.env
 
-import io.micronaut.context.ApplicationContextConfiguration
-import io.micronaut.context.env.DefaultEnvironment
-import io.micronaut.context.env.Environment
-import io.micronaut.context.env.PropertySourceLoader
-import io.micronaut.core.io.service.ServiceDefinition
-import io.micronaut.core.io.service.SoftServiceLoader
-import io.micronaut.jackson.core.env.JsonPropertySourceLoader
+import io.micronaut.context.ApplicationContext
 import spock.lang.Specification
+import io.micronaut.context.env.PropertySource
+
 
 class TomlPropertySourceLoaderSpec extends Specification {
+
     void "test toml property source loader"() {
         given:
-        def serviceDefinition = Mock(ServiceDefinition)
-        serviceDefinition.isPresent() >> true
-        serviceDefinition.load() >> new JsonPropertySourceLoader()
+        def loader = new TomlPropertySourceLoader()
 
-        Environment env = new DefaultEnvironment(new ApplicationContextConfiguration() {
-            @Override
-            List<String> getEnvironments() {
-                return ["test"]
-            }
-        }) {
-            @Override
-            protected SoftServiceLoader<PropertySourceLoader> readPropertySourceLoaders() {
-                GroovyClassLoader gcl = new GroovyClassLoader()
-                gcl.addURL(JsonPropertySourceLoader.getResource("/META-INF/services/io.micronaut.context.env.PropertySourceLoader"))
-                return new SoftServiceLoader<PropertySourceLoader>(PropertySourceLoader, gcl)
-            }
-
-            @Override
-            Optional<InputStream> getResourceAsStream(String path) {
-                if(path.endsWith('-test.toml')) {
-                    return Optional.of(new ByteArrayInputStream('''\
+        def testToml = '''\
 [dataSource]
 jmxExport = true
 username = "sa"
 password = "test"
-'''.bytes))
-                }
-                else if(path.endsWith("application.toml")) {
-                    return Optional.of(new ByteArrayInputStream('''\
+'''
+
+        def appToml = '''\
 [hibernate]
 cache.queries = false
 
@@ -50,24 +28,32 @@ driverClassName = "org.h2.Driver"
 username = "sa"
 password = "test"
 something = [1, 2]
-'''.bytes))
-                }
-                return Optional.empty()
-            }
-        }
+'''
 
+        def map1 = loader.read("application-test", new ByteArrayInputStream(testToml.bytes))
+        def map2 = loader.read("application", new ByteArrayInputStream(appToml.bytes))
+
+        def ps1 = PropertySource.of("application-test", map1)
+        def ps2 = PropertySource.of("application", map2)
+
+        ApplicationContext ctx = ApplicationContext.builder()
+                .environments("test")
+                .start()
+
+        ctx.environment.addPropertySource(ps1)
+        ctx.environment.addPropertySource(ps2)
 
         when:
-        env.start()
+        ctx.environment.refresh()
 
         then:
-        !env.get("hibernate.cache.queries", Boolean).get()
-        env.get("data-source.pooled", Boolean).get()
-        env.get("data-source.password", String).get() == 'test'
-        env.get("data-source.jmx-export", boolean).get()
-        env.get("data-source.something", List).get() == [1,2]
+        !ctx.environment.get("hibernate.cache.queries", Boolean).get()
+        ctx.environment.get("data-source.pooled", Boolean).get()
+        ctx.environment.get("data-source.password", String).get() == 'test'
+        ctx.environment.get("data-source.jmx-export", boolean).get()
+        ctx.environment.get("data-source.something", List).get() == [1,2]
 
-
-
+        cleanup:
+        ctx.close()
     }
 }
