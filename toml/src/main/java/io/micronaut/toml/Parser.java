@@ -16,7 +16,7 @@
 package io.micronaut.toml;
 
 import io.micronaut.core.annotation.Internal;
-import io.micronaut.core.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import io.micronaut.json.tree.JsonNode;
 
 import java.io.IOException;
