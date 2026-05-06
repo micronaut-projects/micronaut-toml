@@ -1,5 +1,5 @@
 [versions]
-micronaut = "5.0.0-M26"
+micronaut = "5.0.0-RC2"
 
 jetbrains-annotations = "26.1.0"
 jflex = "1.9.1"
