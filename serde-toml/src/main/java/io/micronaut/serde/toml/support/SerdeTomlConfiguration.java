@@ -63,6 +63,10 @@ public final class SerdeTomlConfiguration {
         return readConstraints.getMaxStringLength();
     }
 
+    public @Nullable Integer getMaxDocumentSize() {
+        return readConstraints.getMaxDocumentSize();
+    }
+
     /**
      * TOML writer layout.
      */
@@ -76,10 +80,19 @@ public final class SerdeTomlConfiguration {
      */
     @ConfigurationProperties("read-constraints")
     public static final class ReadConstraints {
+        /**
+         * Guarding against memory exhaustion before parsing a Toml Document, DOS attacks.
+         * Configure a non-positive value to disable the limit.
+         *
+         */
+        public static final int DEFAULT_MAX_DOCUMENT_SIZE = 1 * 1024 * 1024; // 1 Mb
+
         @Nullable
         private Integer maxNumberLength;
         @Nullable
         private Integer maxStringLength;
+        @Nullable
+        private Integer maxDocumentSize = DEFAULT_MAX_DOCUMENT_SIZE;
 
         public @Nullable Integer getMaxNumberLength() {
             return maxNumberLength;
@@ -95,6 +108,14 @@ public final class SerdeTomlConfiguration {
 
         public void setMaxStringLength(@Nullable Integer maxStringLength) {
             this.maxStringLength = maxStringLength;
+        }
+
+        public @Nullable Integer getMaxDocumentSize() {
+            return maxDocumentSize;
+        }
+
+        public void setMaxDocumentSize(@Nullable Integer maxDocumentSize) {
+            this.maxDocumentSize = maxDocumentSize;
         }
     }
 

@@ -68,8 +68,8 @@ public final class MicronautTomlParserAdapter {
             : LimitingStream.limitsFromConfiguration(serdeConfiguration);
     }
 
-    private static String readUtf8(InputStream inputStream) throws IOException {
-        byte[] bytes = inputStream.readAllBytes();
+    private String readUtf8(InputStream inputStream) throws IOException {
+        byte[] bytes = readBounded(inputStream);
         CharsetDecoder decoder = StandardCharsets.UTF_8.newDecoder()
             .onMalformedInput(CodingErrorAction.REPORT)
             .onUnmappableCharacter(CodingErrorAction.REPORT);
@@ -78,6 +78,21 @@ public final class MicronautTomlParserAdapter {
         } catch (CharacterCodingException e) {
             throw new SerdeException("Invalid UTF-8 TOML input", e);
         }
+    }
+
+    private byte[] readBounded(InputStream inputStream) throws IOException {
+        Integer maxDocumentSize = tomlConfiguration.getMaxDocumentSize();
+        // may bypass it by developper —> '*.max-document-size': -1
+        if (maxDocumentSize == null || maxDocumentSize <= 0) {
+            return inputStream.readAllBytes();
+        }
+        // readNBytes never buffers more than max+1 bytes.
+        byte[] bytes = inputStream.readNBytes(maxDocumentSize + 1);
+        if (bytes.length > maxDocumentSize) {
+            throw new SerdeException(
+                "TOML document size exceeds the maximum allowed (" + maxDocumentSize + " bytes)");
+        }
+        return bytes;
     }
 
     private static int numberLength(Number number) {

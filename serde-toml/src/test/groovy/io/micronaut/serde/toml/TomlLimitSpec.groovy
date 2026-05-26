@@ -54,6 +54,43 @@ class TomlLimitSpec extends Specification {
         ctx.close()
     }
 
+    void "configured max-document-size rejects oversized documents before parsing"() {
+        given:
+        def ctx = ApplicationContext.run([
+            'micronaut.serde.toml.read-constraints.max-document-size': 64
+        ])
+        def mapper = tomlMapper(ctx)
+        def toml = generateStringToml(512)
+
+        when:
+        mapper.readValue(toml, Argument.of(Map))
+
+        then:
+        Exception e = thrown()
+        messageContainsAny(e, "document size exceeds the maximum allowed")
+
+        cleanup:
+        ctx.close()
+    }
+
+    void "relaxed max-document-size preserves large documents"() {
+        given:
+        def ctx = ApplicationContext.run([
+            'micronaut.serde.toml.read-constraints.max-document-size': -1
+        ])
+        def mapper = tomlMapper(ctx)
+        def value = "a" * 200_000
+
+        when:
+        def parsed = mapper.readValue(mapper.writeValueAsString([foo: value]), Argument.of(Map))
+
+        then:
+        parsed.foo == value
+
+        cleanup:
+        ctx.close()
+    }
+
     void "configured nesting depth is projected into toml parser constraints"() {
         given:
         def ctx = ApplicationContext.run(['micronaut.serde.maximum-nesting-depth': 2])
