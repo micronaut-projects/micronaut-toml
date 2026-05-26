@@ -128,23 +128,21 @@ public final class TomlObjectMapper implements ObjectMapper {
 
     @Override
     public void writeValue(@NonNull OutputStream outputStream, @Nullable Object object) throws IOException {
-        TomlGeneratorEncoder encoder = TomlGeneratorEncoder.create(outputStream, limits(), tomlConfiguration);
         if (object == null) {
-            encoder.encodeNull();
-        } else {
-            serialize(encoder, object);
+            return;
         }
+        TomlGeneratorEncoder encoder = TomlGeneratorEncoder.create(outputStream, limits(), tomlConfiguration);
+        serialize(encoder, object);
         encoder.writeCompleted();
     }
 
     @Override
     public <T> void writeValue(@NonNull OutputStream outputStream, @NonNull Argument<T> type, @Nullable T object) throws IOException {
-        TomlGeneratorEncoder encoder = TomlGeneratorEncoder.create(outputStream, limits(), tomlConfiguration);
         if (object == null) {
-            encoder.encodeNull();
-        } else {
-            serialize(encoder, object, type);
+            return;
         }
+        TomlGeneratorEncoder encoder = TomlGeneratorEncoder.create(outputStream, limits(), tomlConfiguration);
+        serialize(encoder, object, type);
         encoder.writeCompleted();
     }
 

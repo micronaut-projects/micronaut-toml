@@ -174,7 +174,7 @@ public abstract class TomlGeneratorEncoder extends LimitingStream implements Enc
 
     @Override
     public final void encodeChar(char value) throws IOException {
-        encodeTomlValue(JsonNode.createNumberNode(value));
+        encodeTomlValue(JsonNode.createStringNode(String.valueOf(value)));
     }
 
     @Override

@@ -51,13 +51,13 @@ final class TomlStyleRenderer {
     }
 
     /**
-     * Escapes a value for use inside a TOML basic string (double-quoted).
-     * Handles the seven mandatory escape sequences ({@code \b \t \n \f \r \" \\})
-     * and encodes remaining control characters as {@code &#92;uXXXX}.
+     * Determines whether a value can be rendered as a TOML literal string (single-quoted).
+     * Literal strings cannot contain a single quote, ASCII control characters below
+     * {@code 0x20} other than tab, or {@code 0x7f}.
      *
-     * @see <a href="https://toml.io/en/v1.0.0#string">TOML v1.0.0 String — Basic String</a>
-     * @param value
-     * @return boolean
+     * @see <a href="https://toml.io/en/v1.0.0#string">TOML v1.0.0 String — Literal String</a>
+     * @param value the value to check
+     * @return {@code true} if the value can be written as a TOML literal string; {@code false} otherwise
      */
     private static boolean canUseLiteralString(String value) {
         for (int i = 0; i < value.length(); i++) {

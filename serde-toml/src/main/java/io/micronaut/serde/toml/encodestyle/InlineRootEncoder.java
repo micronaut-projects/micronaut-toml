@@ -73,8 +73,9 @@ public final class InlineRootEncoder extends TomlStyleEncoder {
      *
      * @param value The value to render
      * @return The TOML inline representation
+     * @throws IOException If the value cannot be represented in TOML (e.g. a null value)
      */
-    public static String renderInlineValue(JsonNode value) {
+    public static String renderInlineValue(JsonNode value) throws IOException {
         if (value.isString()) {
             return renderString(value.getStringValue());
         }
@@ -85,7 +86,7 @@ public final class InlineRootEncoder extends TomlStyleEncoder {
             return Boolean.toString(value.getBooleanValue());
         }
         if (value.isNull()) {
-            return renderString("");
+            throw new SerdeException("TOML has no null literal; cannot encode a null value");
         }
         if (value.isArray()) {
             StringBuilder builder = new StringBuilder("[");

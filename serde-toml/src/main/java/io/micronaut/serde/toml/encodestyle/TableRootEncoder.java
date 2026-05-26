@@ -64,7 +64,7 @@ public final class TableRootEncoder extends TomlStyleEncoder {
     }
 
     // used in appendTableDocument
-    private static void appendTable(StringBuilder builder, List<String> path, JsonNode objectValue) {
+    private static void appendTable(StringBuilder builder, List<String> path, JsonNode objectValue) throws IOException {
         if (!path.isEmpty()) {
             appendSectionBreak(builder);
             builder.append('[')
@@ -107,7 +107,7 @@ public final class TableRootEncoder extends TomlStyleEncoder {
     }
 
     // used in appendTable and recursively
-    private static void appendArrayOfTables(StringBuilder builder, List<String> path, JsonNode arrayValue) {
+    private static void appendArrayOfTables(StringBuilder builder, List<String> path, JsonNode arrayValue) throws IOException {
         for (JsonNode objectValue : arrayValue.values()) {
             appendSectionBreak(builder);
             builder.append("[[")
