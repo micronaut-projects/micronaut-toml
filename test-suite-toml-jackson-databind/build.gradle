@@ -1,0 +1,18 @@
+plugins {
+    id "io.micronaut.build.internal.toml-base"
+    id "io.micronaut.build.internal.common"
+    id "groovy"
+}
+
+dependencies {
+    testAnnotationProcessor mn.micronaut.inject.java
+
+    testImplementation platform(mn.boms.jackson)
+    testImplementation projects.micronautSerdeTomlTck
+    testImplementation mn.micronaut.jackson.databind
+    testImplementation "tools.jackson.dataformat:jackson-dataformat-toml"
+}
+
+test {
+    useJUnitPlatform()
+}
