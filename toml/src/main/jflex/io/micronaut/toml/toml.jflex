@@ -100,15 +100,15 @@ this.zzBuffer = new char[256];
       }
   }
 
-  private void appendUnicodeEscapeShort() {
+  private void appendUnicodeEscapeShort() throws TomlStreamReadException {
       int value = (Character.digit(yycharat(2), 16) << 12) |
                    (Character.digit(yycharat(3), 16) << 8) |
                    (Character.digit(yycharat(4), 16) << 4) |
                    Character.digit(yycharat(5), 16);
-      textBuffer.append((char) value);
+      appendUnicodeScalar(value);
   }
 
-  private void appendUnicodeEscapeLong() throws java.io.IOException {
+  private void appendUnicodeEscapeLong() throws TomlStreamReadException {
      int value = (Character.digit(yycharat(2), 16) << 28) |
                  (Character.digit(yycharat(3), 16) << 24) |
                  (Character.digit(yycharat(4), 16) << 20) |
@@ -117,17 +117,20 @@ this.zzBuffer = new char[256];
                  (Character.digit(yycharat(7), 16) << 8) |
                  (Character.digit(yycharat(8), 16) << 4) |
                  Character.digit(yycharat(9), 16);
-     if (Character.isValidCodePoint(value)) {
-         // "Such code points can be represented using a single char."
-         if (value <= Character.MAX_VALUE) {
-             textBuffer.append((char) value);
-         } else {
-             textBuffer.append(Character.highSurrogate(value));
-             textBuffer.append(Character.lowSurrogate(value));
-         }
-     } else {
-         throw errorContext.atPosition(this).generic("Invalid code point " + Integer.toHexString(value));
-     }
+     appendUnicodeScalar(value);
+  }
+
+  private void appendUnicodeScalar(int value) throws TomlStreamReadException {
+      if (!Character.isValidCodePoint(value)
+              || (value >= Character.MIN_SURROGATE && value <= Character.MAX_SURROGATE)) {
+          throw errorContext.atPosition(this).generic("Invalid code point " + Integer.toHexString(value));
+      }
+      if (value <= Character.MAX_VALUE) {
+          textBuffer.append((char) value);
+      } else {
+          textBuffer.append(Character.highSurrogate(value));
+          textBuffer.append(Character.lowSurrogate(value));
+      }
   }
 
   int getLine() { return yyline; }
@@ -143,7 +146,7 @@ Ws = [ \t]*
 WsNonEmpty = [ \t]+
 NewLine = \n|\r\n
 CommentStartSymbol = "#"
-NonEol = [^\u0000-\u0008\u000a-\u001f\u007f]
+NonEol = [^\u0000-\u0008\u000a-\u001f\u007f\uFEFF]
 
 //Expression = {Ws} (({KeyVal}|{Table}) {Ws}) {Comment}?
 Comment = {CommentStartSymbol} {NonEol}*
@@ -209,7 +212,7 @@ TimeMinute = [0-9][0-9]
 TimeSecond = [0-9][0-9]
 TimeSecfrac = "." [0-9]+
 TimeNumoffset = [+-] {TimeHour} ":" {TimeMinute}
-TimeOffset = "Z" | {TimeNumoffset}
+TimeOffset = [Zz] | {TimeNumoffset}
 PartialTime = {TimeHour} ":" {TimeMinute} ":" {TimeSecond} {TimeSecfrac}?
 FullDate = {DateFullyear} "-" {DateMonth} "-" {DateMday}
 FullTime = {PartialTime} {TimeOffset}
@@ -259,6 +262,12 @@ HexDig = [0-9A-Fa-f]
 
 <EXPECT_EXPRESSION> {
     // this state matches until the *first* simple-key of a key, or until the -open token of a table.
+
+    \uFEFF {
+          if (yychar != 0) {
+              throw errorContext.atPosition(this).generic("Byte order mark is only permitted at the start of a document");
+          }
+      }
 
     // toml = expression *( newline expression )
     // expression =  ws [ comment ]
@@ -422,7 +431,7 @@ HexDig = [0-9A-Fa-f]
 }
 
 <BASIC_STRING, ML_BASIC_STRING> {
-    [^\u0000-\u0008\u000a-\u001f\u007f\\\"]+ { appendNormalTextToken(); }
+    [^\u0000-\u0008\u000a-\u001f\u007f\uFEFF\\\"]+ { appendNormalTextToken(); }
     \\\" { textBuffer.append('"'); }
     \\\\ { textBuffer.append('\\'); }
     \\b { textBuffer.append('\b'); }
@@ -438,7 +447,7 @@ HexDig = [0-9A-Fa-f]
 <LITERAL_STRING> {
     // literal-string = apostrophe *literal-char apostrophe
     {Apostrophe} {return TomlToken.STRING;}
-    [^\u0000-\u0008\u000a-\u001f\u007f']+ { appendNormalTextToken(); }
+    [^\u0000-\u0008\u000a-\u001f\u007f\uFEFF']+ { appendNormalTextToken(); }
 }
 
 <ML_LITERAL_STRING> {
@@ -446,7 +455,7 @@ HexDig = [0-9A-Fa-f]
     // ml-literal-body = *mll-content *( mll-quotes 1*mll-content ) [ mll-quotes ]
     // mll-quotes = 1*2apostrophe
     {MlLiteralStringDelim} {return TomlToken.STRING;}
-    [^\u0000-\u0008\u000a-\u001f\u007f']+ { appendNormalTextToken(); }
+    [^\u0000-\u0008\u000a-\u001f\u007f\uFEFF']+ { appendNormalTextToken(); }
     {NewLine} { appendNewlineWithPossibleTrim(); }
     // mll-quotes: inline
     {Apostrophe} { textBuffer.append('\''); }
@@ -468,6 +477,9 @@ HexDig = [0-9A-Fa-f]
 }
 [\u0000-\u001f\u007f] {
   throw errorContext.atPosition(this).generic("Illegal control character");
+}
+\uFEFF {
+  throw errorContext.atPosition(this).generic("Byte order mark is only permitted at the start of a document");
 }
 \# {
   throw errorContext.atPosition(this).generic("Comment not permitted here");

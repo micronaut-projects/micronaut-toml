@@ -102,6 +102,7 @@ public final class Parser {
                     throw errorContext.atPosition(lexer).generic("Table redefined");
                 }
                 currentTable.defined = true;
+                currentTable.explicitlyDefined = true;
                 pollExpected(TomlToken.STD_TABLE_CLOSE, Lexer.EXPECT_EOL);
             } else if (token == TomlToken.ARRAY_TABLE_OPEN) {
                 pollExpected(TomlToken.ARRAY_TABLE_OPEN, Lexer.EXPECT_INLINE_KEY);
@@ -111,6 +112,7 @@ public final class Parser {
                     throw errorContext.atPosition(lexer).generic("Array already finished");
                 }
                 currentTable = array.addObject();
+                currentTable.explicitlyDefined = true;
                 pollExpected(TomlToken.ARRAY_TABLE_CLOSE, Lexer.EXPECT_EOL);
             } else {
                 throw errorContext.atPosition(lexer).unexpectedToken(token, "key or table");
@@ -132,11 +134,6 @@ public final class Parser {
             if (node.closed) {
                 throw errorContext.atPosition(lexer).generic("Object already closed");
             }
-            if (!forTable) {
-                /* "Dotted keys create and define a table for each key part before the last one, provided that such
-                 * tables were not previously created." */
-                node.defined = true;
-            }
 
             TomlToken partToken = peek();
             String part;
@@ -156,8 +153,16 @@ public final class Parser {
             TomlNodeBuilder existing = node.get(part);
             if (existing == null) {
                 node = node.putObject(part);
+                if (!forTable) {
+                    /* "Dotted keys create and define a table for each key part before the last one, provided that such
+                     * tables were not previously created." */
+                    node.defined = true;
+                }
             } else if (existing instanceof TomlObjectBuilder) {
                 node = (TomlObjectBuilder) existing;
+                if (!forTable && node.explicitlyDefined) {
+                    throw errorContext.atPosition(lexer).generic("Dotted key cannot extend explicitly defined table");
+                }
             } else if (existing instanceof TomlArrayBuilder) {
                 /* "Any reference to an array of tables points to the most recently defined table element of the array.
                  * This allows you to define sub-tables, and even sub-arrays of tables, inside the most recent table."
@@ -169,6 +174,9 @@ public final class Parser {
                 TomlArrayBuilder array = (TomlArrayBuilder) existing;
                 if (array.closed) {
                     throw errorContext.atPosition(lexer).generic("Array already closed");
+                }
+                if (!forTable) {
+                    throw errorContext.atPosition(lexer).generic("Dotted key cannot extend array of tables");
                 }
                 // Only arrays declared by array tables are not closed, and those are always arrays of objects.
                 node = (TomlObjectBuilder) array.get(array.size() - 1);
@@ -211,11 +219,25 @@ public final class Parser {
 
     private JsonNode parseDateTime(int nextState) throws IOException {
         String text = lexer.yytext();
-        TomlToken token = poll(nextState);
-        // the time-delim index can be [Tt ]. java.time supports only [Tt]
-        if ((token == TomlToken.LOCAL_DATE_TIME || token == TomlToken.OFFSET_DATE_TIME) && text.charAt(10) == ' ') {
-            text = text.substring(0, 10) + 'T' + text.substring(11);
+        TomlToken token = peek();
+        // The time delimiter can be [Tt ]. java.time supports [Tt], and TOML accepts lowercase z.
+        if (token == TomlToken.LOCAL_DATE_TIME || token == TomlToken.OFFSET_DATE_TIME) {
+            StringBuilder normalized = null;
+            if (text.charAt(10) == ' ') {
+                normalized = new StringBuilder(text);
+                normalized.setCharAt(10, 'T');
+            }
+            if (token == TomlToken.OFFSET_DATE_TIME && text.charAt(text.length() - 1) == 'z') {
+                if (normalized == null) {
+                    normalized = new StringBuilder(text);
+                }
+                normalized.setCharAt(text.length() - 1, 'Z');
+            }
+            if (normalized != null) {
+                text = normalized.toString();
+            }
         }
+        pollExpected(token, nextState);
 
         /*
         if (TomlReadFeature.PARSE_JAVA_TIME.enabledIn(options)) {
@@ -501,6 +523,7 @@ public final class Parser {
         final Map<String, TomlNodeBuilder> nodes = new LinkedHashMap<>();
         boolean closed = false;
         boolean defined = false;
+        boolean explicitlyDefined = false;
 
         @Override
         public JsonNode build() {
