@@ -167,9 +167,8 @@ public final class Parser {
                 /* "Any reference to an array of tables points to the most recently defined table element of the array.
                  * This allows you to define sub-tables, and even sub-arrays of tables, inside the most recent table."
                  *
-                 * I interpret this somewhat broadly: I accept such references even if there were unrelated tables
-                 * in between, and I accept them for simple dotted keys as well (not just for tables). These cases don't
-                 * seem to be covered by the specification.
+                 * I interpret this somewhat broadly for table headers: I accept such references even if there were
+                 * unrelated tables in between. This case doesn't seem to be covered by the specification.
                  */
                 TomlArrayBuilder array = (TomlArrayBuilder) existing;
                 if (array.closed) {
