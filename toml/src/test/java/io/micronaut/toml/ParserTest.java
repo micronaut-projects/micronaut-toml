@@ -676,6 +676,32 @@ public class ParserTest {
     }
 
     @Test
+    public void dottedKeyCannotExtendExplicitTable() throws IOException {
+        MatcherAssert.assertThat(
+                Assertions.assertThrows(TomlStreamReadException.class, () -> toml("[fruit.apple]\n" +
+                        "[fruit]\n" +
+                        "apple.color = \"red\"")).getOriginalMessage(),
+                Matchers.containsString("Dotted key cannot extend explicitly defined table"));
+    }
+
+    @Test
+    public void dottedKeyCannotExtendArrayTable() throws IOException {
+        MatcherAssert.assertThat(
+                Assertions.assertThrows(TomlStreamReadException.class, () -> toml("[[fruit.apple]]\n" +
+                        "[fruit]\n" +
+                        "apple.color = \"red\"")).getOriginalMessage(),
+                Matchers.containsString("Dotted key cannot extend array of tables"));
+    }
+
+    @Test
+    public void dottedKeyCannotExtendClosedValueArray() throws IOException {
+        MatcherAssert.assertThat(
+                Assertions.assertThrows(TomlStreamReadException.class, () -> toml("apple = []\n" +
+                        "apple.color = \"red\"")).getOriginalMessage(),
+                Matchers.containsString("Array already closed"));
+    }
+
+    @Test
     public void inlineTable() throws IOException {
         Assertions.assertEquals(
                 json("{\"name\": {\"first\": \"Tom\", \"last\": \"Preston-Werner\"}, \"point\": {\"x\": 1, \"y\": 2}, \"animal\": {\"type\": {\"name\": \"pug\"}}}"),
@@ -885,6 +911,46 @@ public class ParserTest {
     }
 
     @Test
+    public void offsetDateTimeAcceptsLowercaseUtcDesignator() throws IOException {
+        Assertions.assertEquals(
+                json("{\"odt\": \"1979-05-27T07:32:00Z\"}"),
+                toml("odt = 1979-05-27T07:32:00z")
+        );
+    }
+
+    @Test
+    public void byteOrderMarkOnlyAtDocumentStart() throws IOException {
+        Assertions.assertEquals(json("{\"key\": \"value\"}"), toml("\uFEFFkey = \"value\""));
+
+        MatcherAssert.assertThat(
+                Assertions.assertThrows(TomlStreamReadException.class, () -> toml("key = \"value\"\n\uFEFFother = true")).getOriginalMessage(),
+                Matchers.containsString("Byte order mark is only permitted at the start"));
+
+        MatcherAssert.assertThat(
+                Assertions.assertThrows(TomlStreamReadException.class, () -> toml("key = \"\uFEFF\"")).getOriginalMessage(),
+                Matchers.containsString("Byte order mark is only permitted at the start"));
+    }
+
+    @Test
+    public void unicodeEscapeSurrogateInvalid() throws IOException {
+        MatcherAssert.assertThat(
+                Assertions.assertThrows(TomlStreamReadException.class, () -> toml("short = \"\\uD800\"")).getOriginalMessage(),
+                Matchers.containsString("Invalid code point d800"));
+
+        MatcherAssert.assertThat(
+                Assertions.assertThrows(TomlStreamReadException.class, () -> toml("long = \"\\U0000DFFF\"")).getOriginalMessage(),
+                Matchers.containsString("Invalid code point dfff"));
+    }
+
+    @Test
+    public void unicodeEscapeValidSupplementaryScalar() throws IOException {
+        Assertions.assertEquals(
+                JsonNode.createStringNode(new String(Character.toChars(0x1D800))),
+                toml("value = \"\\U0001D800\"").get("value")
+        );
+    }
+
+    @Test
     public void intTypes() throws IOException {
         Map<String, JsonNode> expected = new LinkedHashMap<>();
         expected.put("int1", JsonNode.createNumberNode(99));
@@ -1043,4 +1109,5 @@ public class ParserTest {
             StreamSupport.stream(node.entries().spliterator(), false).map(Map.Entry::getKey).collect(Collectors.toList())
         );
     }
+
 }
