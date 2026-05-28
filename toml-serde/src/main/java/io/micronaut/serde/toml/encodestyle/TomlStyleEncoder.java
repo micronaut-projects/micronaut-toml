@@ -27,7 +27,9 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Base root encoder for a specific TOML output style.
+ * Base root encoder for a specific TOML output style (Table/Inline).
+ *
+ * @since 3.0.1
  */
 @Internal
 public abstract sealed class TomlStyleEncoder extends TomlGeneratorEncoder

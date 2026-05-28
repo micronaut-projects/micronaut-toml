@@ -33,6 +33,12 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 
+/**
+ * Adapts the shared {@link Parser} to Micronaut Serialization: decodes a TOML input stream into a
+ * {@link JsonNode} tree while enforcing the configured read limits (document size, string/number length, depth).
+ *
+ * @since 3.0.1
+ */
 @Internal
 public final class MicronautTomlParserAdapter {
 

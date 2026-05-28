@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
  *
  * @see <a href="https://toml.io/en/v1.0.0#keys">TOML v1.0.0 Keys</a>
  * @see <a href="https://toml.io/en/v1.0.0#string">TOML v1.0.0 String</a>
+ * @since 3.0.1
  */
 final class TomlStyleRenderer {
     /**

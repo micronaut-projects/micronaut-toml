@@ -31,6 +31,8 @@ import static io.micronaut.serde.toml.encodestyle.TomlStyleRenderer.renderKeySeg
 
 /**
  * Root encoder for TOML table output style.
+ *
+ * @since 3.0.1
  */
 @Internal
 public final class TableRootEncoder extends TomlStyleEncoder {

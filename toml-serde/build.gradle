@@ -17,7 +17,7 @@ dependencies {
 
     testCompileOnly mn.micronaut.inject.groovy
 
-    testImplementation projects.micronautSerdeTomlTck
+    testImplementation projects.micronautTomlSerdeTck
     testImplementation libs.micronaut.serde.processor
     testImplementation mn.micronaut.inject.java.test
     testImplementation mnTest.micronaut.test.spock

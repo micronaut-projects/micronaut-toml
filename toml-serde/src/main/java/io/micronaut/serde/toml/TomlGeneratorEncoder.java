@@ -40,7 +40,9 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Native TOML text encoder backed by Micronaut Serialization encoder events.
+ * Native TOML text encoder backed by Micronaut Serialization encoder.
+ *
+ * @since 3.0.1
  */
 @Internal
 public abstract class TomlGeneratorEncoder extends LimitingStream implements Encoder {
@@ -51,6 +53,11 @@ public abstract class TomlGeneratorEncoder extends LimitingStream implements Enc
     private TomlGeneratorEncoder child;
     private boolean completed;
 
+    /**
+     * @param remainingLimits The remaining nesting limits
+     * @param path            The current path within the document
+     * @param parent          The parent encoder, or {@code null} for the root encoder
+     */
     protected TomlGeneratorEncoder(@NonNull RemainingLimits remainingLimits,
                                    @NonNull String path,
                                    @Nullable TomlGeneratorEncoder parent) {

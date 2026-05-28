@@ -8,7 +8,7 @@ dependencies {
     testAnnotationProcessor mn.micronaut.inject.java
 
     testImplementation platform(mn.boms.jackson)
-    testImplementation projects.micronautSerdeTomlTck
+    testImplementation projects.micronautTomlSerdeTck
     testImplementation mn.micronaut.jackson.databind
     testImplementation "tools.jackson.dataformat:jackson-dataformat-toml"
 }

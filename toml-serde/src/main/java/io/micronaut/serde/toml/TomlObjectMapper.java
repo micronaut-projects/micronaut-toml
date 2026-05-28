@@ -46,13 +46,33 @@ import java.io.OutputStream;
 /**
  * A TOML-backed {@link ObjectMapper}.
  *
+ * <p>The serialization output style is controlled by
+ * {@link SerdeTomlConfiguration.WriteFeatures#getWriteLayout()}
+ * ({@code micronaut.serde.toml.write-features.write-layout}):
+ * <ul>
+ *   <li>{@link SerdeTomlConfiguration.WriteLayout#TABLE TABLE} (default) as
+ *       {@code [table]} headers
+ *   <li>{@link SerdeTomlConfiguration.WriteLayout#INLINE INLINE} — as inline
+ *       tables, e.g. {@code key = {a = 1, b = 2}}.</li>
+ * </ul>
+ *
+ * <p>Reads are guarded by {@link SerdeTomlConfiguration.ReadConstraints}
+ * ({@code micronaut.serde.toml.read-constraints.*}) — maximum document size, string-value length and
+ * number-token length — together with the serde nesting-depth limit.
+ *
  * @author Mousrij Hamza
+ * @since 3.0.1
  */
 @Singleton
-@Named("toml")
+@Named(TomlObjectMapper.NAME)
 @Internal
 @SuppressWarnings({"rawtypes", "unchecked"})
 public final class TomlObjectMapper implements ObjectMapper {
+
+    /**
+     * The qualifier name of the TOML {@link ObjectMapper} bean.
+     */
+    public static final String NAME = "toml";
 
     private final SerdeRegistry registry;
     @Nullable
@@ -60,6 +80,13 @@ public final class TomlObjectMapper implements ObjectMapper {
     private final SerdeTomlConfiguration tomlConfiguration;
     private final MicronautTomlParserAdapter parserAdapter;
 
+    /**
+     * Creates a TOML-backed {@link ObjectMapper}.
+     *
+     * @param registry           The serde registry
+     * @param serdeConfiguration The serde configuration
+     * @param tomlConfiguration  The TOML-specific configuration
+     */
     public TomlObjectMapper(SerdeRegistry registry,
                             SerdeConfiguration serdeConfiguration,
                             SerdeTomlConfiguration tomlConfiguration) {
@@ -81,11 +108,25 @@ public final class TomlObjectMapper implements ObjectMapper {
         this.parserAdapter = parserAdapter;
     }
 
+    /**
+     * Returns the {@link SerdeRegistry} used by this object mapper, if possible.
+     *
+     * @return The serde registry
+     */
     @Override
     public @NonNull SerdeRegistry getSerdeRegistry() {
         return registry;
     }
 
+    /**
+     * Parse and map Toml from the given stream.
+     *
+     * @param inputStream The input data.
+     * @param type The type to deserialize to.
+     * @param <T> Type variable of the return type.
+     * @return The deserialized object.
+     * @throws IOException IOException
+     */
     @Override
     public <T> @Nullable T readValue(@NonNull InputStream inputStream, @NonNull Argument<T> type) throws IOException {
         JsonNode tree = parserAdapter.parse(inputStream);
@@ -94,11 +135,29 @@ public final class TomlObjectMapper implements ObjectMapper {
         return deserializer.deserializeNullable(JsonNodeDecoder.create(tree, limits()), decoderContext, type);
     }
 
+    /**
+     * Parse and map Toml from the given byte array.
+     *
+     * @param byteArray The input data.
+     * @param type The type to deserialize to.
+     * @param <T> Type variable of the return type.
+     * @return The deserialized object.
+     * @throws IOException IOException
+     */
     @Override
     public <T> @Nullable T readValue(byte @NonNull [] byteArray, @NonNull Argument<T> type) throws IOException {
         return readValue(new ByteArrayInputStream(byteArray), type);
     }
 
+    /**
+     * Transform a {@link JsonNode} to a value of the given type.
+     *
+     * @param tree The input json data.
+     * @param type The type to deserialize.
+     * @param <T> Type variable of the return type.
+     * @return The deserialized value.
+     * @throws IOException IOException
+     */
     @Override
     public <T> @Nullable T readValueFromTree(@NonNull JsonNode tree, @NonNull Argument<T> type) throws IOException {
         Deserializer.DecoderContext decoderContext = registry.newDecoderContext(null);
@@ -106,6 +165,13 @@ public final class TomlObjectMapper implements ObjectMapper {
         return deserializer.deserializeNullable(JsonNodeDecoder.create(tree, limits()), decoderContext, type);
     }
 
+    /**
+     * Transform an object value to a json tree.
+     *
+     * @param value The object value to transform.
+     * @return The json representation.
+     * @throws IOException If there are any mapping exceptions (e.g. illegal values).
+     */
     @Override
     public @NonNull JsonNode writeValueToTree(@Nullable Object value) throws IOException {
         if (value == null) {
@@ -116,6 +182,15 @@ public final class TomlObjectMapper implements ObjectMapper {
         return encoder.getCompletedValue();
     }
 
+    /**
+     * Transform an object value to a json tree.
+     *
+     * @param type The object type
+     * @param value The object value to transform.
+     * @param <T> The type variable of the type.
+     * @return The json representation.
+     * @throws IOException If there are any mapping exceptions (e.g. illegal values).
+     */
     @Override
     public @NonNull <T> JsonNode writeValueToTree(@NonNull Argument<T> type, @Nullable T value) throws IOException {
         if (value == null) {
@@ -126,6 +201,13 @@ public final class TomlObjectMapper implements ObjectMapper {
         return encoder.getCompletedValue();
     }
 
+    /**
+     * Write an object as Toml using JsonNode entities.
+     *
+     * @param outputStream The stream to write to.
+     * @param object The object to serialize.
+     * @throws IOException IOException
+     */
     @Override
     public void writeValue(@NonNull OutputStream outputStream, @Nullable Object object) throws IOException {
         if (object == null) {
@@ -136,6 +218,15 @@ public final class TomlObjectMapper implements ObjectMapper {
         encoder.writeCompleted();
     }
 
+    /**
+     * Write an object as Toml using JsonNode entities.
+     *
+     * @param outputStream The stream to write to.
+     * @param type The object type
+     * @param object The object to serialize.
+     * @param <T> The generic type
+     * @throws IOException IOException
+     */
     @Override
     public <T> void writeValue(@NonNull OutputStream outputStream, @NonNull Argument<T> type, @Nullable T object) throws IOException {
         if (object == null) {
@@ -146,6 +237,13 @@ public final class TomlObjectMapper implements ObjectMapper {
         encoder.writeCompleted();
     }
 
+    /**
+     * Write an object as Toml using JsonNode entities.
+     *
+     * @param object The object to serialize.
+     * @return The serialized encoded json.
+     * @throws IOException IOException
+     */
     @Override
     public byte @NonNull [] writeValueAsBytes(@Nullable Object object) throws IOException {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -153,6 +251,15 @@ public final class TomlObjectMapper implements ObjectMapper {
         return output.toByteArray();
     }
 
+    /**
+     * Write an object as Toml using JsonNode entities.
+     *
+     * @param type The object type
+     * @param object The object to serialize.
+     * @param <T> The generic type
+     * @return The serialized encoded json.
+     * @throws IOException IOException
+     */
     @Override
     public <T> byte @NonNull [] writeValueAsBytes(@NonNull Argument<T> type, @Nullable T object) throws IOException {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -160,23 +267,12 @@ public final class TomlObjectMapper implements ObjectMapper {
         return output.toByteArray();
     }
 
+    /**
+     * @return The configured stream config.
+     */
     @Override
     public @NonNull JsonStreamConfig getStreamConfig() {
         return JsonStreamConfig.DEFAULT;
-    }
-
-    @Override
-    public @NonNull ObjectMapper cloneWithConfiguration(@Nullable SerdeConfiguration configuration,
-                                                        @Nullable SerializationConfiguration serializationConfiguration,
-                                                        @Nullable DeserializationConfiguration deserializationConfiguration) {
-        SerdeConfiguration actualConfiguration = configuration == null ? this.serdeConfiguration : configuration;
-        SerdeRegistry actualRegistry = registry.cloneWithConfiguration(configuration, serializationConfiguration, deserializationConfiguration);
-        return new TomlObjectMapper(
-            actualRegistry,
-            actualConfiguration,
-            tomlConfiguration,
-            new MicronautTomlParserAdapter(actualConfiguration, tomlConfiguration)
-        );
     }
 
     private LimitingStream.@NonNull RemainingLimits limits() {

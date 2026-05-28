@@ -29,6 +29,8 @@ import static io.micronaut.serde.toml.encodestyle.TomlStyleRenderer.renderString
 
 /**
  * Root encoder for TOML inline output style.
+ *
+ * @since 3.0.1
  */
 @Internal
 public final class InlineRootEncoder extends TomlStyleEncoder {

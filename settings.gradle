@@ -16,8 +16,8 @@ rootProject.name = 'toml-parent'
 
 include 'toml-bom'
 include 'toml'
-include 'serde-toml'
-include 'serde-toml-tck'
+include 'toml-serde'
+include 'toml-serde-tck'
 include 'test-suite-toml-jackson-databind'
 
 micronautBuild {
