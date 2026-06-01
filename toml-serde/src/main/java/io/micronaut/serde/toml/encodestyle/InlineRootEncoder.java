@@ -17,36 +17,22 @@ package io.micronaut.serde.toml.encodestyle;
 
 import io.micronaut.core.annotation.Internal;
 import io.micronaut.json.tree.JsonNode;
-import io.micronaut.serde.LimitingStream;
 import io.micronaut.serde.exceptions.SerdeException;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.Map;
 
 import static io.micronaut.serde.toml.encodestyle.TomlStyleRenderer.renderKeySegment;
 import static io.micronaut.serde.toml.encodestyle.TomlStyleRenderer.renderString;
 
 /**
- * Root encoder for TOML inline output style.
+ * Renderer for TOML inline output style.
  *
  * @since 3.0.1
  */
 @Internal
-public final class InlineRootEncoder extends TomlStyleEncoder {
-
-    /**
-     * @param outputStream The target output stream
-     * @param remainingLimits The remaining encoder limits
-     */
-    public InlineRootEncoder(OutputStream outputStream,
-                             LimitingStream.RemainingLimits remainingLimits) {
-        super(outputStream, remainingLimits);
-    }
-
-    @Override
-    protected void appendCompletedDocument(StringBuilder builder, JsonNode value) throws IOException {
-        appendInlineDocument(builder, value);
+public final class InlineRootEncoder {
+    private InlineRootEncoder() {
     }
 
     /**

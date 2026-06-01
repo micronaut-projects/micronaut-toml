@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 /**
- * TOML encoder output style implementations.
+ * TOML text rendering style implementations.
  */
 @NullMarked
 package io.micronaut.serde.toml.encodestyle;

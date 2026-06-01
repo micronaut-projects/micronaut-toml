@@ -25,11 +25,12 @@ import io.micronaut.serde.LimitingStream;
 import io.micronaut.serde.ObjectMapper;
 import io.micronaut.serde.SerdeRegistry;
 import io.micronaut.serde.Serializer;
-import io.micronaut.serde.config.DeserializationConfiguration;
 import io.micronaut.serde.config.SerdeConfiguration;
-import io.micronaut.serde.config.SerializationConfiguration;
+import io.micronaut.serde.config.naming.PropertyNamingStrategy;
 import io.micronaut.serde.support.util.JsonNodeDecoder;
 import io.micronaut.serde.support.util.JsonNodeEncoder;
+import io.micronaut.serde.toml.encodestyle.InlineRootEncoder;
+import io.micronaut.serde.toml.encodestyle.TableRootEncoder;
 import io.micronaut.serde.toml.support.MicronautTomlParserAdapter;
 import io.micronaut.serde.toml.support.SerdeTomlConfiguration;
 import jakarta.inject.Named;
@@ -42,6 +43,14 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.TimeZone;
 
 /**
  * A TOML-backed {@link ObjectMapper}.
@@ -213,9 +222,7 @@ public final class TomlObjectMapper implements ObjectMapper {
         if (object == null) {
             return;
         }
-        TomlGeneratorEncoder encoder = TomlGeneratorEncoder.create(outputStream, limits(), tomlConfiguration);
-        serialize(encoder, object);
-        encoder.writeCompleted();
+        writeToml(outputStream, writeValueAsTomlTree(object));
     }
 
     /**
@@ -232,9 +239,7 @@ public final class TomlObjectMapper implements ObjectMapper {
         if (object == null) {
             return;
         }
-        TomlGeneratorEncoder encoder = TomlGeneratorEncoder.create(outputStream, limits(), tomlConfiguration);
-        serialize(encoder, object, type);
-        encoder.writeCompleted();
+        writeToml(outputStream, writeValueAsTomlTree(type, object));
     }
 
     /**
@@ -277,6 +282,55 @@ public final class TomlObjectMapper implements ObjectMapper {
 
     private LimitingStream.@NonNull RemainingLimits limits() {
         return serdeConfiguration == null ? LimitingStream.DEFAULT_LIMITS : LimitingStream.limitsFromConfiguration(serdeConfiguration);
+    }
+
+    private JsonNode writeValueAsTomlTree(@NonNull Object value) throws IOException {
+        return writeValueAsTomlTree((Argument) Argument.of(value.getClass()), value);
+    }
+
+    private <T> JsonNode writeValueAsTomlTree(@NonNull Argument<T> type, @NonNull T value) throws IOException {
+        JsonNodeEncoder encoder = JsonNodeEncoder.create(limits());
+        serialize(encoder, value);
+        return omitNullObjectProperties(encoder.getCompletedValue());
+    }
+
+    private void writeToml(@NonNull OutputStream outputStream, @NonNull JsonNode value) throws IOException {
+        StringBuilder builder = new StringBuilder();
+        switch (tomlConfiguration.getWriteLayout()) {
+            case TABLE -> TableRootEncoder.appendTableDocument(builder, value);
+            case INLINE -> InlineRootEncoder.appendInlineDocument(builder, value);
+        }
+        outputStream.write(builder.toString().getBytes(StandardCharsets.UTF_8));
+        outputStream.flush();
+    }
+
+    private static JsonNode omitNullObjectProperties(JsonNode value) {
+        if (value.isObject()) {
+            Map<String, JsonNode> values = new LinkedHashMap<>();
+            boolean changed = false;
+            for (Map.Entry<String, JsonNode> entry : value.entries()) {
+                JsonNode entryValue = entry.getValue();
+                if (entryValue.isNull()) {
+                    changed = true;
+                    continue;
+                }
+                JsonNode normalizedValue = omitNullObjectProperties(entryValue);
+                values.put(entry.getKey(), normalizedValue);
+                changed |= normalizedValue != entryValue;
+            }
+            return changed ? JsonNode.createObjectNode(values) : value;
+        }
+        if (value.isArray()) {
+            List<JsonNode> values = new ArrayList<>(value.size());
+            boolean changed = false;
+            for (JsonNode entryValue : value.values()) {
+                JsonNode normalizedValue = omitNullObjectProperties(entryValue);
+                values.add(normalizedValue);
+                changed |= normalizedValue != entryValue;
+            }
+            return changed ? JsonNode.createArrayNode(values) : value;
+        }
+        return value;
     }
 
     private void serialize(@NonNull Encoder encoder, @NonNull Object value) throws IOException {
