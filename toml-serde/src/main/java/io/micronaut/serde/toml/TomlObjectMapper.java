@@ -44,13 +44,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
-import java.util.TimeZone;
 
 /**
  * A TOML-backed {@link ObjectMapper}.
@@ -290,8 +283,8 @@ public final class TomlObjectMapper implements ObjectMapper {
 
     private <T> JsonNode writeValueAsTomlTree(@NonNull Argument<T> type, @NonNull T value) throws IOException {
         JsonNodeEncoder encoder = JsonNodeEncoder.create(limits());
-        serialize(encoder, value);
-        return omitNullObjectProperties(encoder.getCompletedValue());
+        serialize(encoder, value, type);
+        return encoder.getCompletedValue();
     }
 
     private void writeToml(@NonNull OutputStream outputStream, @NonNull JsonNode value) throws IOException {
@@ -299,38 +292,12 @@ public final class TomlObjectMapper implements ObjectMapper {
         switch (tomlConfiguration.getWriteLayout()) {
             case TABLE -> TableRootEncoder.appendTableDocument(builder, value);
             case INLINE -> InlineRootEncoder.appendInlineDocument(builder, value);
+            default -> throw new IllegalStateException(
+                "Unsupported TOML write layout: " + tomlConfiguration.getWriteLayout()
+            );
         }
         outputStream.write(builder.toString().getBytes(StandardCharsets.UTF_8));
         outputStream.flush();
-    }
-
-    private static JsonNode omitNullObjectProperties(JsonNode value) {
-        if (value.isObject()) {
-            Map<String, JsonNode> values = new LinkedHashMap<>();
-            boolean changed = false;
-            for (Map.Entry<String, JsonNode> entry : value.entries()) {
-                JsonNode entryValue = entry.getValue();
-                if (entryValue.isNull()) {
-                    changed = true;
-                    continue;
-                }
-                JsonNode normalizedValue = omitNullObjectProperties(entryValue);
-                values.put(entry.getKey(), normalizedValue);
-                changed |= normalizedValue != entryValue;
-            }
-            return changed ? JsonNode.createObjectNode(values) : value;
-        }
-        if (value.isArray()) {
-            List<JsonNode> values = new ArrayList<>(value.size());
-            boolean changed = false;
-            for (JsonNode entryValue : value.values()) {
-                JsonNode normalizedValue = omitNullObjectProperties(entryValue);
-                values.add(normalizedValue);
-                changed |= normalizedValue != entryValue;
-            }
-            return changed ? JsonNode.createArrayNode(values) : value;
-        }
-        return value;
     }
 
     private void serialize(@NonNull Encoder encoder, @NonNull Object value) throws IOException {

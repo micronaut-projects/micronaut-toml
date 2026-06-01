@@ -22,6 +22,7 @@ import io.micronaut.serde.exceptions.SerdeException;
 import java.io.IOException;
 import java.util.Map;
 
+import static io.micronaut.serde.toml.encodestyle.TomlStyleRenderer.canRenderObjectProperty;
 import static io.micronaut.serde.toml.encodestyle.TomlStyleRenderer.renderKeySegment;
 import static io.micronaut.serde.toml.encodestyle.TomlStyleRenderer.renderString;
 
@@ -47,9 +48,13 @@ public final class InlineRootEncoder {
             throw new SerdeException("TOML root value must be an object");
         }
         for (Map.Entry<String, JsonNode> entry : value.entries()) {
+            JsonNode entryValue = entry.getValue();
+            if (!canRenderObjectProperty(entryValue)) {
+                continue;
+            }
             builder.append(renderKeySegment(entry.getKey()))
                 .append(" = ")
-                .append(renderInlineValue(entry.getValue()))
+                .append(renderInlineValue(entryValue))
                 .append('\n');
         }
     }
@@ -91,12 +96,16 @@ public final class InlineRootEncoder {
             StringBuilder builder = new StringBuilder("{");
             int index = 0;
             for (Map.Entry<String, JsonNode> entry : value.entries()) {
+                JsonNode entryValue = entry.getValue();
+                if (!canRenderObjectProperty(entryValue)) {
+                    continue;
+                }
                 if (index++ > 0) {
                     builder.append(", ");
                 }
                 builder.append(renderKeySegment(entry.getKey()))
                     .append(" = ")
-                    .append(renderInlineValue(entry.getValue()));
+                    .append(renderInlineValue(entryValue));
             }
             return builder.append('}').toString();
         }

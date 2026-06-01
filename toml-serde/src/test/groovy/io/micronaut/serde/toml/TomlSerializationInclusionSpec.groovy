@@ -19,7 +19,10 @@ class TomlSerializationInclusionSpec extends Specification implements TestProper
 
     @Override
     Map<String, String> getProperties() {
-        ["micronaut.serde.serialization.inclusion": SerdeConfig.SerInclude.ALWAYS.name()]
+        [
+                "micronaut.serde.serialization.inclusion": SerdeConfig.SerInclude.ALWAYS.name(),
+                "micronaut.serde.write-binary-as-array"   : "false"
+        ]
     }
 
     void "always inclusion writes empty strings"() {

@@ -15,6 +15,8 @@
  */
 package io.micronaut.serde.toml.encodestyle;
 
+import io.micronaut.json.tree.JsonNode;
+
 import java.util.Locale;
 import java.util.regex.Pattern;
 
@@ -39,6 +41,10 @@ final class TomlStyleRenderer {
             return key;
         }
         return renderString(key);
+    }
+
+    static boolean canRenderObjectProperty(JsonNode value) {
+        return !value.isNull();
     }
 
     /**

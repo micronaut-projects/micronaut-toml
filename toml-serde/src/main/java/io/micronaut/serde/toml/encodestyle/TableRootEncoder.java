@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 import static io.micronaut.serde.toml.encodestyle.InlineRootEncoder.renderInlineValue;
+import static io.micronaut.serde.toml.encodestyle.TomlStyleRenderer.canRenderObjectProperty;
 import static io.micronaut.serde.toml.encodestyle.TomlStyleRenderer.renderKeySegment;
 
 /**
@@ -67,6 +68,9 @@ public final class TableRootEncoder {
          */
         for (Map.Entry<String, JsonNode> entry : objectValue.entries()) {
             JsonNode value = entry.getValue();
+            if (!canRenderObjectProperty(value)) {
+                continue;
+            }
             if (!isTableValue(value)) {
                 builder.append(renderKeySegment(entry.getKey()))
                     .append(" = ")
@@ -86,6 +90,9 @@ public final class TableRootEncoder {
         for (Map.Entry<String, JsonNode> entry : objectValue.entries()) {
             List<String> keyPath = appendPath(path, entry.getKey());
             JsonNode value = entry.getValue();
+            if (!canRenderObjectProperty(value)) {
+                continue;
+            }
             if (value.isObject()) {
                 appendTable(builder, keyPath, value);
             } else if (value.isArray() && isArrayOfObjects(value)) {
@@ -103,6 +110,9 @@ public final class TableRootEncoder {
                 .append("]]\n");
             for (Map.Entry<String, JsonNode> entry : objectValue.entries()) {
                 JsonNode entryValue = entry.getValue();
+                if (!canRenderObjectProperty(entryValue)) {
+                    continue;
+                }
                 if (!isTableValue(entryValue)) {
                     builder.append(renderKeySegment(entry.getKey()))
                         .append(" = ")
@@ -113,6 +123,9 @@ public final class TableRootEncoder {
             for (Map.Entry<String, JsonNode> entry : objectValue.entries()) {
                 List<String> childPath = appendPath(path, entry.getKey());
                 JsonNode entryValue = entry.getValue();
+                if (!canRenderObjectProperty(entryValue)) {
+                    continue;
+                }
                 if (entryValue.isObject()) {
                     appendTable(builder, childPath, entryValue);
                 } else if (entryValue.isArray() && isArrayOfObjects(entryValue)) {
