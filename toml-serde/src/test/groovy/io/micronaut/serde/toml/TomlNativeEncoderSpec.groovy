@@ -9,6 +9,7 @@ import io.micronaut.serde.toml.fixture.BookList
 import io.micronaut.serde.toml.fixture.ComplexField
 import io.micronaut.serde.toml.fixture.FiveMinuteUser
 import io.micronaut.test.extensions.spock.annotation.MicronautTest
+import io.micronaut.test.support.TestPropertyProvider
 import jakarta.inject.Inject
 import jakarta.inject.Named
 import spock.lang.Specification
@@ -16,11 +17,18 @@ import spock.lang.Specification
 import java.nio.charset.StandardCharsets
 
 @MicronautTest
-class TomlNativeEncoderSpec extends Specification {
+class TomlNativeEncoderSpec extends Specification implements TestPropertyProvider {
 
     @Inject
     @Named("toml")
     ObjectMapper tomlMapper
+
+    @Override
+    Map<String, String> getProperties() {
+        [
+                "micronaut.serde.write-binary-as-array": "false"
+        ]
+    }
 
     void "table layout writes nested objects with table headers"() {
         given:

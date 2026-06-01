@@ -12,15 +12,23 @@ import io.micronaut.serde.toml.fixture.PointWrapper
 import jakarta.inject.Inject
 import jakarta.inject.Named
 import io.micronaut.test.extensions.spock.annotation.MicronautTest
+import io.micronaut.test.support.TestPropertyProvider
 
 import java.nio.charset.StandardCharsets
 
 @MicronautTest
-class TomlObjectMapperSpec extends AbstractMicronautTomlSerdeSpec {
+class TomlObjectMapperSpec extends AbstractMicronautTomlSerdeSpec implements TestPropertyProvider {
 
     @Inject
     @Named("toml")
     TomlObjectMapper tomlMapper
+
+    @Override
+    Map<String, String> getProperties() {
+        [
+                "micronaut.serde.write-binary-as-array": "false"
+        ]
+    }
 
     void "writeValueToTree serializes a pojo completely"() {
         given:
@@ -84,7 +92,7 @@ class TomlObjectMapperSpec extends AbstractMicronautTomlSerdeSpec {
         FiveMinuteUser fromTree = tomlMapper.readValueFromTree(tree, Argument.of(FiveMinuteUser))
 
         then:
-        tree.get("userImage").values()*.intValue == [1, 2, 3, 4]
+        tree.get("userImage").stringValue == "AQIDBA=="
         fromTree == user
     }
 
@@ -184,18 +192,13 @@ userImage = 'AQIDBA=='
                 lastName : JsonNode.createStringNode(user.lastName),
                 gender   : JsonNode.createStringNode(user.gender.name()),
                 verified : JsonNode.createBooleanNode(user.verified),
-                userImage: JsonNode.createArrayNode([
-                        JsonNode.createNumberNode(1),
-                        JsonNode.createNumberNode(2),
-                        JsonNode.createNumberNode(3),
-                        JsonNode.createNumberNode(4)
-                ])
+                userImage: JsonNode.createStringNode("AQIDBA==")
         ])
 
         then:
         tomlTree == expectedTree
         tomlTextTree == [firstName: user.firstName, lastName: user.lastName,
-                         gender: user.gender.name(), verified: user.verified, userImage: [1, 2, 3, 4]]
+                         gender: user.gender.name(), verified: user.verified, userImage: "AQIDBA=="]
     }
 
     void "null boxed scalar and enum fields are omitted and read back as absent values"() {

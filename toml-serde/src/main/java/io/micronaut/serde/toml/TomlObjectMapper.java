@@ -26,7 +26,6 @@ import io.micronaut.serde.ObjectMapper;
 import io.micronaut.serde.SerdeRegistry;
 import io.micronaut.serde.Serializer;
 import io.micronaut.serde.config.SerdeConfiguration;
-import io.micronaut.serde.config.naming.PropertyNamingStrategy;
 import io.micronaut.serde.support.util.JsonNodeDecoder;
 import io.micronaut.serde.support.util.JsonNodeEncoder;
 import io.micronaut.serde.toml.encodestyle.InlineRootEncoder;

@@ -15,6 +15,7 @@
  */
 package io.micronaut.serde.toml.encodestyle;
 
+import io.micronaut.core.annotation.Internal;
 import io.micronaut.json.tree.JsonNode;
 
 import java.util.Locale;
@@ -27,6 +28,7 @@ import java.util.regex.Pattern;
  * @see <a href="https://toml.io/en/v1.0.0#string">TOML v1.0.0 String</a>
  * @since 3.0.1
  */
+@Internal
 final class TomlStyleRenderer {
     /**
      * Reference to the <a href="https://toml.io/en/v1.0.0#keys">TOML v1.0.0 keys specification</a>.

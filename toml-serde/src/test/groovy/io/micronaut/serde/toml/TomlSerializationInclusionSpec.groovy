@@ -46,7 +46,7 @@ class TomlSerializationInclusionSpec extends Specification implements TestProper
         def toml = tomlMapper.writeValueAsString(bean)
         def decoded = tomlMapper.readValue(toml, Argument.of(BinaryBean))
 
-        then: "the empty byte array is preserved as an empty base64 string instead of being omitted"
+        then:
         toml == "data = ''\n"
         decoded.data == new byte[0]
     }
