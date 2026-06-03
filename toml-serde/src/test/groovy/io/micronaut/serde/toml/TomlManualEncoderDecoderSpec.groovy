@@ -181,7 +181,7 @@ sku = 284758
 bool = false
 int_val = 42
 long_val = 9999999999
-float_val = 3.14
+float_val = 3.140000104904175
 double_val = 2.718
 binary = 'AQID'
 """

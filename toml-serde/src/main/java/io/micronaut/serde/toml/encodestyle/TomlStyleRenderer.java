@@ -18,11 +18,11 @@ package io.micronaut.serde.toml.encodestyle;
 import io.micronaut.core.annotation.Internal;
 import io.micronaut.json.tree.JsonNode;
 
-import java.util.Locale;
-import java.util.regex.Pattern;
-
 /**
  * Shared TOML text rendering helpers used by both table and inline output styles.
+ *
+ * <p>String/character are delegated now {@link StringOutputUtil}, a copy of
+ * the upstream {@code jackson-dataformat-toml} utility.
  *
  * @see <a href="https://toml.io/en/v1.0.0#keys">TOML v1.0.0 Keys</a>
  * @see <a href="https://toml.io/en/v1.0.0#string">TOML v1.0.0 String</a>
@@ -30,18 +30,15 @@ import java.util.regex.Pattern;
  */
 @Internal
 final class TomlStyleRenderer {
-    /**
-     * Reference to the <a href="https://toml.io/en/v1.0.0#keys">TOML v1.0.0 keys specification</a>.
-     */
-    private static final Pattern BARE_KEY = Pattern.compile("[A-Za-z0-9_-]+");
 
     private TomlStyleRenderer() {
     }
 
     static String renderKeySegment(String key) {
-        if (BARE_KEY.matcher(key).matches()) {
+        if ((StringOutputUtil.categorize(key) & StringOutputUtil.UNQUOTED_KEY) != 0) {
             return key;
         }
+        // overlapping byte
         return renderString(key);
     }
 
@@ -53,83 +50,30 @@ final class TomlStyleRenderer {
      * Reference to the <a href="https://toml.io/en/v1.0.0#string">TOML v1.0.0 String specification</a>.
      */
     static String renderString(String value) {
-        if (canUseLiteralString(value)) {
+        if ((StringOutputUtil.categorize(value) & StringOutputUtil.LITERAL_STRING ) != 0) {
             return "'" + value + "'";
         }
         return "\"" + escapeBasicString(value) + "\"";
     }
 
     /**
-     * Determines whether a value can be rendered as a TOML literal string (single-quoted).
-     * Literal strings cannot contain a single quote, ASCII control characters below
-     * {@code 0x20} other than tab, or {@code 0x7f}.
-     *
-     * @see <a href="https://toml.io/en/v1.0.0#string">TOML v1.0.0 String — Literal String</a>
-     * @param value the value to check
-     * @return {@code true} if the value can be written as a TOML literal string; {@code false} otherwise
-     */
-    private static boolean canUseLiteralString(String value) {
-        for (int i = 0; i < value.length(); i++) {
-            char c = value.charAt(i);
-            if (c == '\'' || (c < 0x20 && c != '\t') || c == 0x7f) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * Produces a TOML unicode escape: {@code &#92;uXXXX} for BMP code points,
-     * {@code &#92;UXXXXXXXX} for supplementary code points.
+     * Escapes a value for a TOML basic string, delegating per-character escaping to
+     * {@link StringOutputUtil#getBasicStringEscape(char)}.
      *
      * @see <a href="https://toml.io/en/v1.0.0#string">TOML v1.0.0 String — Basic String</a>
-     * @param value
-     * @return String
      */
     private static String escapeBasicString(String value) {
-        StringBuilder builder = new StringBuilder(value.length());
-        for (int i = 0; i < value.length();) {
-            int codePoint = value.codePointAt(i);
-            switch (codePoint) {
-                case '"' -> builder.append("\\\"");
-                case '\\' -> builder.append("\\\\");
-                case '\b' -> builder.append("\\b");
-                case '\t' -> builder.append("\\t");
-                case '\n' -> builder.append("\\n");
-                case '\f' -> builder.append("\\f");
-                case '\r' -> builder.append("\\r");
-                default -> {
-                    if (codePoint < 0x20 || codePoint == 0x7f) {
-                        builder.append(unicodeEscape(codePoint));
-                    } else {
-                        builder.appendCodePoint(codePoint);
-                    }
-                }
+        StringBuilder builder = new StringBuilder(value.length() + 2);
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            String escape = StringOutputUtil.getBasicStringEscape(c);
+            // determination
+            if (escape != null) {
+                builder.append(escape);
+            } else {
+                builder.append(c);
             }
-            i += Character.charCount(codePoint);
         }
         return builder.toString();
-    }
-
-    /**
-     * Produces a TOML unicode escape for control characters and supplementary code points.
-     *
-     * @see <a href="https://toml.io/en/v1.0.0#string">TOML v1.0.0 String — Basic String</a>
-     */
-    private static String unicodeEscape(int codePoint) {
-        if (codePoint <= 0xffff) {
-            return "\\u" + leftPad(Integer.toHexString(codePoint).toUpperCase(Locale.ROOT), 4);
-        }
-        return "\\U" + leftPad(Integer.toHexString(codePoint).toUpperCase(Locale.ROOT), 8);
-    }
-
-    /**
-     * Left-pads a string with zeros to the specified length.
-     */
-    private static String leftPad(String value, int length) {
-        if (value.length() >= length) {
-            return value;
-        }
-        return "0".repeat(length - value.length()) + value;
     }
 }

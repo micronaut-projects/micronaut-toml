@@ -116,26 +116,10 @@ public final class InlineRootEncoder {
      * Renders numeric values per the TOML v1.0.0 Float specification.
      */
     private static String renderNumber(Number value) {
-        if (value instanceof Float floatValue) {
-            return renderFloat(floatValue);
-        }
-        if (value instanceof Double doubleValue) {
-            return renderDouble(doubleValue);
+        if (value instanceof Float || value instanceof Double) {
+            return renderDouble(value.doubleValue());
         }
         return value.toString();
-    }
-
-    private static String renderFloat(float value) {
-        if (Float.isNaN(value)) {
-            return "nan";
-        }
-        if (value == Float.POSITIVE_INFINITY) {
-            return "inf";
-        }
-        if (value == Float.NEGATIVE_INFINITY) {
-            return "-inf";
-        }
-        return Float.toString(value);
     }
 
     private static String renderDouble(double value) {

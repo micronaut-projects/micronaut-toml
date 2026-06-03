@@ -97,6 +97,8 @@ public final class TableRootEncoder {
                 appendTable(builder, keyPath, value);
             } else if (value.isArray() && isArrayOfObjects(value)) {
                 appendArrayOfTables(builder, keyPath, value);
+            } else if (isTableValue(value)) {
+                throw new AssertionError("Out of sync with the table dispatch conditions for: " + value);
             }
         }
     }
@@ -130,6 +132,8 @@ public final class TableRootEncoder {
                     appendTable(builder, childPath, entryValue);
                 } else if (entryValue.isArray() && isArrayOfObjects(entryValue)) {
                     appendArrayOfTables(builder, childPath, entryValue);
+                } else if (isTableValue(entryValue)) {
+                    throw new AssertionError("Out of sync with the table dispatch conditions for: " + entryValue);
                 }
             }
         }
