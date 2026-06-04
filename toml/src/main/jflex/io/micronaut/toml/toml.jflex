@@ -100,6 +100,12 @@ this.zzBuffer = new char[256];
       }
   }
 
+  private void appendUnicodeEscapeByte() throws TomlStreamReadException {
+      int value = (Character.digit(yycharat(2), 16) << 4) |
+                   Character.digit(yycharat(3), 16);
+      appendUnicodeScalar(value);
+  }
+
   private void appendUnicodeEscapeShort() throws TomlStreamReadException {
       int value = (Character.digit(yycharat(2), 16) << 12) |
                    (Character.digit(yycharat(3), 16) << 8) |
@@ -172,6 +178,7 @@ QuotationMark = "\""
 // exclude control chars (tab is allowed, " and \)
 //BasicUnescaped = [^\u0000-\u0008\u0009-\u001f\u007f\\\"]
 //Escaped = "\\" ([\"\\bfnrt]|"u" {HexDig} {HexDig} {HexDig} {HexDig} ({HexDig} {HexDig} {HexDig} {HexDig})?)
+UnicodeEscapeByte = "\\x" {HexDig} {HexDig}
 UnicodeEscapeShort = "\\u" {HexDig} {HexDig} {HexDig} {HexDig}
 UnicodeEscapeLong = "\\U" {HexDig} {HexDig} {HexDig} {HexDig} {HexDig} {HexDig} {HexDig} {HexDig}
 
@@ -213,7 +220,7 @@ TimeSecond = [0-9][0-9]
 TimeSecfrac = "." [0-9]+
 TimeNumoffset = [+-] {TimeHour} ":" {TimeMinute}
 TimeOffset = [Zz] | {TimeNumoffset}
-PartialTime = {TimeHour} ":" {TimeMinute} ":" {TimeSecond} {TimeSecfrac}?
+PartialTime = {TimeHour} ":" {TimeMinute} (":" {TimeSecond} {TimeSecfrac}?)?
 FullDate = {DateFullyear} "-" {DateMonth} "-" {DateMday}
 FullTime = {PartialTime} {TimeOffset}
 
@@ -319,7 +326,7 @@ HexDig = [0-9A-Fa-f]
           startString();
       }
     {KeyValSep} {return TomlToken.KEY_VAL_SEP;}
-    {InlineTableClose} {return TomlToken.INLINE_TABLE_CLOSE;}
+    {WsCommentNewlineNonEmpty}* {InlineTableClose} {return TomlToken.INLINE_TABLE_CLOSE;}
     {StdTableClose} {return TomlToken.STD_TABLE_CLOSE;}
     {ArrayTableClose} {return TomlToken.ARRAY_TABLE_CLOSE;}
 }
@@ -376,7 +383,7 @@ HexDig = [0-9A-Fa-f]
 
     // inline array / table
     {ArrayOpen} {WsCommentNewlineNonEmpty}* {return TomlToken.ARRAY_OPEN;}
-    {InlineTableOpen} {return TomlToken.INLINE_TABLE_OPEN;}
+    {InlineTableOpen} {WsCommentNewlineNonEmpty}* {return TomlToken.INLINE_TABLE_OPEN;}
 
     // array end just after comma
     {WsCommentNewlineNonEmpty}* {ArrayClose} {return TomlToken.ARRAY_CLOSE;}
@@ -394,8 +401,8 @@ HexDig = [0-9A-Fa-f]
     // inline-table = inline-table-open [ inline-table-keyvals ] inline-table-close
     // inline-table-keyvals = keyval [ inline-table-sep inline-table-keyvals ]
 
-    {Ws} {Comma} {Ws} {return TomlToken.COMMA;}
-    {InlineTableClose} {return TomlToken.INLINE_TABLE_CLOSE;}
+    {WsCommentNewlineNonEmpty}* {Comma} {WsCommentNewlineNonEmpty}* {return TomlToken.COMMA;}
+    {WsCommentNewlineNonEmpty}* {InlineTableClose} {return TomlToken.INLINE_TABLE_CLOSE;}
 }
 
 <BASIC_STRING> {
@@ -439,6 +446,8 @@ HexDig = [0-9A-Fa-f]
     \\n { textBuffer.append('\n'); }
     \\r { textBuffer.append('\r'); }
     \\t { textBuffer.append('\t'); }
+    \\e { textBuffer.append('\u001B'); }
+    {UnicodeEscapeByte} { appendUnicodeEscapeByte(); }
     {UnicodeEscapeShort} { appendUnicodeEscapeShort(); }
     {UnicodeEscapeLong} { appendUnicodeEscapeLong(); }
     \\ { throw errorContext.atPosition(this).generic("Unknown escape sequence"); }
