@@ -29,6 +29,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.Temporal;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -230,16 +231,8 @@ public final class Parser {
 
     private JsonNode parseDateTime(int nextState) throws IOException {
         String originalText = lexer.yytext();
+        String text = originalText;
         TomlToken token = peek();
-        String text = normalizeDateTimeText(token, originalText);
-        if (validateDateTime) {
-            validateDateTime(token, text, originalText);
-        }
-        pollExpected(token, nextState);
-        return JsonNode.createStringNode(text);
-    }
-
-    private String normalizeDateTimeText(TomlToken token, String text) {
         // The time delimiter can be [Tt ]. java.time supports [Tt], and TOML accepts lowercase z.
         if (token == TomlToken.LOCAL_DATE_TIME || token == TomlToken.OFFSET_DATE_TIME) {
             StringBuilder normalized = null;
@@ -257,21 +250,27 @@ public final class Parser {
                 text = normalized.toString();
             }
         }
-        return text;
-    }
 
-    private void validateDateTime(TomlToken token, String text, String originalText) throws TomlStreamReadException {
-        try {
-            switch (token) {
-                case LOCAL_DATE -> LocalDate.parse(text);
-                case LOCAL_TIME -> LocalTime.parse(text);
-                case LOCAL_DATE_TIME -> LocalDateTime.parse(text);
-                case OFFSET_DATE_TIME -> OffsetDateTime.parse(text);
-                default -> throw new AssertionError();
+        if (validateDateTime) {
+            Temporal value;
+            try {
+                if (token == TomlToken.LOCAL_DATE) {
+                    value = LocalDate.parse(text);
+                } else if (token == TomlToken.LOCAL_TIME) {
+                    value = LocalTime.parse(text);
+                } else if (token == TomlToken.LOCAL_DATE_TIME) {
+                    value = LocalDateTime.parse(text);
+                } else if (token == TomlToken.OFFSET_DATE_TIME) {
+                    value = OffsetDateTime.parse(text);
+                } else {
+                    throw new AssertionError();
+                }
+            } catch (DateTimeParseException e) {
+                throw errorContext.atPosition(lexer).invalidDateTime(e, originalText);
             }
-        } catch (DateTimeParseException e) {
-            throw errorContext.atPosition(lexer).invalidDateTime(e, originalText);
         }
+        pollExpected(token, nextState);
+        return JsonNode.createStringNode(text);
     }
 
     private JsonNode parseInt(int nextState) throws IOException {
