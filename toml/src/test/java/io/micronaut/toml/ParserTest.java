@@ -460,6 +460,20 @@ public class ParserTest {
     }
 
     @Test
+    void dateTimeValidationIsOptional() throws IOException {
+        Assertions.assertEquals(
+                json("{\"date\": \"2024-02-30\"}"),
+                toml("date = 2024-02-30")
+        );
+
+        TomlStreamReadException thrown = Assertions.assertThrows(
+                TomlStreamReadException.class,
+                () -> Parser.parse("date = 2024-02-30", true)
+        );
+        MatcherAssert.assertThat(thrown.getOriginalMessage(), Matchers.containsString("Invalid date/time value"));
+    }
+
+    @Test
     public void array() throws IOException {
         Assertions.assertEquals(
                 json("{\"integers\": [1,2,3], \"colors\": [\"red\",\"yellow\",\"green\"], \"nested_arrays_of_ints\": [ [ 1, 2 ], [3, 4, 5] ], \"nested_mixed_array\": [ [ 1, 2 ], [\"a\", \"b\", \"c\"] ], \"string_array\": [ \"all\", \"strings\", \"are the same\", \"type\" ],\n" +

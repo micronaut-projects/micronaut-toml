@@ -18,6 +18,7 @@ package io.micronaut.toml;
 import io.micronaut.core.annotation.Internal;
 
 import java.io.IOException;
+import java.time.format.DateTimeParseException;
 
 /**
  * TOML Stream Read Exception.
@@ -137,6 +138,14 @@ public final class TomlStreamReadException
 
             TomlStreamReadException invalidNumber(NumberFormatException cause) {
                 return new TomlStreamReadException("Invalid number representation", location, cause);
+            }
+
+            TomlStreamReadException invalidDateTime(DateTimeParseException cause, String value) {
+                return new TomlStreamReadException(
+                        "Invalid date/time value ('" + value + "'), problem: " + cause.getMessage(),
+                        location,
+                        cause
+                );
             }
         }
     }

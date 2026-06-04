@@ -3,6 +3,7 @@ micronaut = "5.0.0"
 
 jetbrains-annotations = "26.1.0"
 jflex = "1.9.1"
+toml-test-for-java = "0.2.0-2.2.0"
 
 [libraries]
 # Core
@@ -10,3 +11,4 @@ micronaut-core = { module = 'io.micronaut:micronaut-core-bom', version.ref = 'mi
 
 jetbrains-annotations = { module = "org.jetbrains:annotations", version.ref = "jetbrains-annotations" }
 jflex = { module = "de.jflex:jflex", version.ref = "jflex" }
+toml-test-for-java = { module = "at.yawk.toml.test:toml-test-for-java", version.ref = "toml-test-for-java" }

@@ -24,6 +24,12 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.Temporal;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -44,21 +50,28 @@ import java.util.stream.Collectors;
 public final class Parser {
     private final TomlStreamReadException.ErrorContext errorContext;
     private final Lexer lexer;
+    private final boolean validateDateTime;
 
     private TomlToken next;
 
     private Parser(
             TomlStreamReadException.ErrorContext errorContext,
-            Reader input
+            Reader input,
+            boolean validateDateTime
     ) throws IOException {
         this.errorContext = errorContext;
         this.lexer = new Lexer(input, errorContext);
+        this.validateDateTime = validateDateTime;
         lexer.prohibitInternalBufferAllocate = false;
         this.next = lexer.yylex();
     }
 
     public static JsonNode parse(String input) throws IOException {
-        Parser parser = new Parser(new TomlStreamReadException.ErrorContext(input), new StringReader(input));
+        return parse(input, false);
+    }
+
+    static JsonNode parse(String input, boolean validateDateTime) throws IOException {
+        Parser parser = new Parser(new TomlStreamReadException.ErrorContext(input), new StringReader(input), validateDateTime);
         return parser.parse();
     }
 
@@ -217,7 +230,8 @@ public final class Parser {
     }
 
     private JsonNode parseDateTime(int nextState) throws IOException {
-        String text = lexer.yytext();
+        String originalText = lexer.yytext();
+        String text = originalText;
         TomlToken token = peek();
         // The time delimiter can be [Tt ]. java.time supports [Tt], and TOML accepts lowercase z.
         if (token == TomlToken.LOCAL_DATE_TIME || token == TomlToken.OFFSET_DATE_TIME) {
@@ -236,31 +250,27 @@ public final class Parser {
                 text = normalized.toString();
             }
         }
-        pollExpected(token, nextState);
 
-        /*
-        if (TomlReadFeature.PARSE_JAVA_TIME.enabledIn(options)) {
+        if (validateDateTime) {
             Temporal value;
-            if (token == TomlToken.LOCAL_DATE) {
-                value = LocalDate.parse(text);
-            } else if (token == TomlToken.LOCAL_TIME) {
-                value = LocalTime.parse(text);
-            } else {
-                if (token == TomlToken.LOCAL_DATE_TIME) {
+            try {
+                if (token == TomlToken.LOCAL_DATE) {
+                    value = LocalDate.parse(text);
+                } else if (token == TomlToken.LOCAL_TIME) {
+                    value = LocalTime.parse(text);
+                } else if (token == TomlToken.LOCAL_DATE_TIME) {
                     value = LocalDateTime.parse(text);
                 } else if (token == TomlToken.OFFSET_DATE_TIME) {
                     value = OffsetDateTime.parse(text);
                 } else {
-                    VersionUtil.throwInternal();
                     throw new AssertionError();
                 }
+            } catch (DateTimeParseException e) {
+                throw errorContext.atPosition(lexer).invalidDateTime(e, originalText);
             }
-            return factory.pojoNode(value);
-        } else {
-
-         */
+        }
+        pollExpected(token, nextState);
         return JsonNode.createStringNode(text);
-        //}
     }
 
     private JsonNode parseInt(int nextState) throws IOException {
@@ -348,10 +358,15 @@ public final class Parser {
             }
             return JsonNode.createNumberNode(v);
         }
-        if (length <= 18) {
-            long v = Long.parseLong(bufferString);
-            if (negative) {
-                v = -v;
+        if (length <= 18 || inLongRange(bufferString, negative)) {
+            long v;
+            if (length <= 18) {
+                v = Long.parseLong(bufferString);
+                if (negative) {
+                    v = -v;
+                }
+            } else {
+                v = Long.parseLong(negative ? "-" + bufferString : bufferString);
             }
             // Might still fit in int, need to check
             if ((int) v == v) {
@@ -365,6 +380,14 @@ public final class Parser {
         } catch (NumberFormatException e) {
             throw errorContext.atPosition(lexer).invalidNumber(e);
         }
+    }
+
+    private static boolean inLongRange(String bufferString, boolean negative) {
+        if (bufferString.length() != 19) {
+            return false;
+        }
+        String limit = negative ? "9223372036854775808" : "9223372036854775807";
+        return bufferString.compareTo(limit) <= 0;
     }
 
     private JsonNode parseFloat(int nextState) throws IOException {
