@@ -460,7 +460,7 @@ public class ParserTest {
     }
 
     @Test
-    public void dateTimeValidationIsOptional() throws IOException {
+    void dateTimeValidationIsOptional() throws IOException {
         Assertions.assertEquals(
                 json("{\"date\": \"2024-02-30\"}"),
                 toml("date = 2024-02-30")

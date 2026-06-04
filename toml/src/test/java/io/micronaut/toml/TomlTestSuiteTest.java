@@ -2,14 +2,10 @@ package io.micronaut.toml;
 
 import at.yawk.toml.test.TomlExpectedDocumentValidator;
 import at.yawk.toml.test.TomlTestCase;
-import io.micronaut.jackson.core.tree.JsonNodeTreeCodec;
-import io.micronaut.json.JsonStreamConfig;
 import io.micronaut.json.tree.JsonNode;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import tools.jackson.core.json.JsonFactory;
-import tools.jackson.core.json.JsonReadFeature;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -40,7 +36,11 @@ class TomlTestSuiteTest {
     @ParameterizedTest(name = "{0}")
     @MethodSource("at.yawk.toml.test.TomlTestSuite#invalidToml100")
     void invalidToml100(TomlTestCase testCase) {
-        Assertions.assertThrows(IOException.class, () -> Parser.parse(tomlString(testCase), true), testCase::id);
+        Assertions.assertThrows(IOException.class, () -> parseInvalidToml(testCase), testCase::id);
+    }
+
+    private static void parseInvalidToml(TomlTestCase testCase) throws IOException {
+        Parser.parse(tomlString(testCase), true);
     }
 
     private static String tomlString(TomlTestCase testCase) throws CharacterCodingException {
@@ -83,12 +83,7 @@ class TomlTestSuiteTest {
         @Override
         protected Map<String, ?> parseExpectedJson(String expectedJson) {
             try {
-                return unwrapObject(JsonNodeTreeCodec.getInstance()
-                    .withConfig(JsonStreamConfig.DEFAULT.withUseBigDecimalForFloats(true))
-                    .readTree(JsonFactory.builder()
-                        .configure(JsonReadFeature.ALLOW_NON_NUMERIC_NUMBERS, true)
-                        .build()
-                        .createParser(expectedJson)));
+                return unwrapObject(ParserTest.json(expectedJson));
             } catch (IOException e) {
                 throw new IllegalArgumentException("Invalid expected JSON", e);
             }
