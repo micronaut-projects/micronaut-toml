@@ -1,3 +1,7 @@
+io.micronaut.serde.toml
+io.micronaut.serde.toml.encodestyle
+io.micronaut.serde.toml.fixture
+io.micronaut.serde.toml.support
 io.micronaut.toml
 io.micronaut.toml.env
 io.micronaut.toml.info

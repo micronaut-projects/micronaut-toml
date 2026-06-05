@@ -1,1 +1,1 @@
-packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html","k":"18"},{"l":"io.micronaut.toml"},{"l":"io.micronaut.toml.env"},{"l":"io.micronaut.toml.info"}];updateSearchResults();
+packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html","k":"18"},{"l":"io.micronaut.serde.toml"},{"l":"io.micronaut.serde.toml.encodestyle"},{"l":"io.micronaut.serde.toml.fixture"},{"l":"io.micronaut.serde.toml.support"},{"l":"io.micronaut.toml"},{"l":"io.micronaut.toml.env"},{"l":"io.micronaut.toml.info"}];updateSearchResults();

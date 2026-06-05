@@ -49,7 +49,75 @@
                 <p><strong>Version:</strong>3.0.1-SNAPSHOT</p>
                 <p></p>
             </div>
-
+<div class="sect2">
+<h3 id="_micronaut_toml_serde_config_properties">Micronaut Toml Serde Config Properties</h3>
+<a id="io.micronaut.serde.toml.support.SerdeTomlConfiguration$ReadConstraints" href="#io.micronaut.serde.toml.support.SerdeTomlConfiguration$ReadConstraints">&#128279;</a>
+<table class="tableblock frame-all grid-all stretch">
+<caption class="title">Table 1. Configuration Properties for <a href="../api/io/micronaut/serde/toml/support/SerdeTomlConfiguration.ReadConstraints.html">SerdeTomlConfiguration$ReadConstraints</a></caption>
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Property</th>
+<th class="tableblock halign-left valign-top">Type</th>
+<th class="tableblock halign-left valign-top">Description</th>
+<th class="tableblock halign-left valign-top">Default value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>micronaut.serde.toml.read-constraints.max-number-length</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">java.lang.Integer</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The maximum number token length, or {@code null} to use the default</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>micronaut.serde.toml.read-constraints.max-string-length</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">java.lang.Integer</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The maximum string value length, or {@code null} for no limit</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>micronaut.serde.toml.read-constraints.max-document-size</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">java.lang.Integer</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The maximum document size in bytes, or {@code null}/non-positive for no limit</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+</tbody>
+</table>
+<div style="page-break-after: always;"></div>
+<a id="io.micronaut.serde.toml.support.SerdeTomlConfiguration$WriteFeatures" href="#io.micronaut.serde.toml.support.SerdeTomlConfiguration$WriteFeatures">&#128279;</a>
+<table class="tableblock frame-all grid-all stretch">
+<caption class="title">Table 2. Configuration Properties for <a href="../api/io/micronaut/serde/toml/support/SerdeTomlConfiguration.WriteFeatures.html">SerdeTomlConfiguration$WriteFeatures</a></caption>
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Property</th>
+<th class="tableblock halign-left valign-top">Type</th>
+<th class="tableblock halign-left valign-top">Description</th>
+<th class="tableblock halign-left valign-top">Default value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>micronaut.serde.toml.write-features.write-layout</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="../api/io/micronaut/serde/toml/support/SerdeTomlConfiguration.WriteLayout.html">SerdeTomlConfiguration$WriteLayout</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The configured write layout (defaults to {@link WriteLayout#TABLE})</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+</tbody>
+</table>
+<div style="page-break-after: always;"></div>
+</div>
         </div>
     </div>
 </body>
