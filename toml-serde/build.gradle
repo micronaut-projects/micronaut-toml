@@ -1,0 +1,38 @@
+plugins {
+    id "io.micronaut.build.internal.toml-module"
+}
+
+dependencies {
+    annotationProcessor mn.micronaut.inject.java
+    annotationProcessor libs.micronaut.serde.processor
+
+    api mn.micronaut.context
+    api libs.micronaut.serde.api
+
+    implementation libs.micronaut.serde.support
+    implementation projects.micronautToml
+
+    testAnnotationProcessor mn.micronaut.inject.java
+    testAnnotationProcessor libs.micronaut.serde.processor
+
+    testCompileOnly mn.micronaut.inject.groovy
+
+    testImplementation projects.micronautTomlSerdeTck
+    testImplementation libs.micronaut.serde.processor
+    testImplementation mn.micronaut.inject.java.test
+    testImplementation mnTest.micronaut.test.spock
+}
+
+configurations.configureEach {
+    exclude group: "com.fasterxml.jackson.core", module: "jackson-databind"
+}
+
+test {
+    useJUnitPlatform()
+}
+
+micronautBuild {
+    binaryCompatibility {
+        enabled = false
+    }
+}

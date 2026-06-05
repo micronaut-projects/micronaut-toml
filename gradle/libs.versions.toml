@@ -1,5 +1,6 @@
 [versions]
 micronaut = "5.0.0"
+micronaut-serde = "3.0.0"
 
 jetbrains-annotations = "26.1.0"
 jflex = "1.9.1"
@@ -8,6 +9,11 @@ toml-test-for-java = "0.2.0-2.2.0"
 [libraries]
 # Core
 micronaut-core = { module = 'io.micronaut:micronaut-core-bom', version.ref = 'micronaut' }
+
+# Serde
+micronaut-serde-api = { module = "io.micronaut.serde:micronaut-serde-api", version.ref = "micronaut-serde" }
+micronaut-serde-support = { module = "io.micronaut.serde:micronaut-serde-support", version.ref = "micronaut-serde" }
+micronaut-serde-processor = { module = "io.micronaut.serde:micronaut-serde-processor", version.ref = "micronaut-serde" }
 
 jetbrains-annotations = { module = "org.jetbrains:annotations", version.ref = "jetbrains-annotations" }
 jflex = { module = "de.jflex:jflex", version.ref = "jflex" }
