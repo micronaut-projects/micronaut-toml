@@ -78,6 +78,40 @@ public class ParserTest {
     }
 
     @Test
+    public void toml11BasicStringEscapes() throws IOException {
+        Assertions.assertEquals(
+                json("{\"esc\": \"\\u001B[\", \"hex\": \"a\\u0000\"}"),
+                toml("esc = \"\\e[\"\n" +
+                        "hex = \"\\x61\\x00\""));
+    }
+
+    @Test
+    public void toml11OptionalSeconds() throws IOException {
+        Assertions.assertEquals(
+                json("{\"localTime\": \"14:15:00\", \"localDateTime\": \"2010-02-03T14:15:00\", " +
+                        "\"offsetDateTimeZ\": \"2010-02-03T14:15:00Z\", " +
+                        "\"offsetDateTimePlus\": \"2010-02-03T14:15:00+02:30\", " +
+                        "\"offsetDateTimeMinus\": \"2010-02-03T14:15:00-02:30\"}"),
+                toml("localTime = 14:15\n" +
+                        "localDateTime = 2010-02-03 14:15\n" +
+                        "offsetDateTimeZ = 2010-02-03 14:15Z\n" +
+                        "offsetDateTimePlus = 2010-02-03 14:15+02:30\n" +
+                        "offsetDateTimeMinus = 2010-02-03 14:15-02:30"));
+    }
+
+    @Test
+    public void toml11InlineTableNewlinesAndTrailingComma() throws IOException {
+        Assertions.assertEquals(
+                json("{\"tbl\": {\"key\": \"a string\", \"nested\": {\"key\": 1}}}"),
+                toml("tbl = {\n" +
+                        "    key = \"a string\",\n" +
+                        "    nested = {\n" +
+                        "        key = 1,\n" +
+                        "    },\n" +
+                        "}"));
+    }
+
+    @Test
     public void quotedKeys() throws IOException {
         Assertions.assertEquals(
                 json("{\"127.0.0.1\": \"value\", \"character encoding\": \"value\", \"ʎǝʞ\": \"value\", \"key2\": \"value\", \"quoted \\\"value\\\"\": \"value\"}"),
@@ -887,9 +921,10 @@ public class ParserTest {
 
     @Test
     public void inlineTableTrailingComma() throws IOException {
-        MatcherAssert.assertThat(
-                Assertions.assertThrows(TomlStreamReadException.class, () -> toml("foo = {bar = 'baz',}")).getOriginalMessage(),
-                Matchers.containsString("Trailing comma not permitted for inline tables"));
+        Assertions.assertEquals(
+                json("{\"foo\": {\"bar\": \"baz\"}}"),
+                toml("foo = {bar = 'baz',}")
+        );
     }
 
     @Test
@@ -902,10 +937,11 @@ public class ParserTest {
 
     @Test
     public void inlineTableNl() throws IOException {
-        MatcherAssert.assertThat(
-                Assertions.assertThrows(TomlStreamReadException.class, () -> toml("foo = {bar = 'baz',\n" +
-                        "a = 'b'}")).getOriginalMessage(),
-                Matchers.containsString("Newline not permitted here"));
+        Assertions.assertEquals(
+                json("{\"foo\": {\"bar\": \"baz\", \"a\": \"b\"}}"),
+                toml("foo = {bar = 'baz',\n" +
+                        "a = 'b'}")
+        );
     }
 
     @Test

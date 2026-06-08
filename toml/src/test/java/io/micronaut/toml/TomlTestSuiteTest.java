@@ -25,8 +25,8 @@ class TomlTestSuiteTest {
     private static final TomlExpectedDocumentValidator VALIDATOR = new MicronautJsonNodeValidator();
 
     @ParameterizedTest(name = "{0}")
-    @MethodSource("at.yawk.toml.test.TomlTestSuite#validToml100")
-    void validToml100(TomlTestCase testCase) throws IOException {
+    @MethodSource("at.yawk.toml.test.TomlTestSuite#validToml110")
+    void validToml110(TomlTestCase testCase) throws IOException {
         String toml = tomlString(testCase);
         JsonNode actual = Parser.parse(toml, true);
 
@@ -34,8 +34,8 @@ class TomlTestSuiteTest {
     }
 
     @ParameterizedTest(name = "{0}")
-    @MethodSource("at.yawk.toml.test.TomlTestSuite#invalidToml100")
-    void invalidToml100(TomlTestCase testCase) {
+    @MethodSource("at.yawk.toml.test.TomlTestSuite#invalidToml110")
+    void invalidToml110(TomlTestCase testCase) {
         Assertions.assertThrows(IOException.class, () -> parseInvalidToml(testCase), testCase::id);
     }
 
