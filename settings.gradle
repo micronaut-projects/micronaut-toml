@@ -18,6 +18,7 @@ include 'toml-bom'
 include 'toml'
 include 'toml-serde'
 include 'toml-serde-tck'
+include 'doc-examples:example-toml-java'
 include 'test-suite-toml-jackson-databind'
 
 micronautBuild {
