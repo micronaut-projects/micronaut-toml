@@ -89,6 +89,8 @@
         
         <div class="toc-item" style="margin-left:0px" id="toc-item-quickStart"><a href="#quickStart"><strong>3</strong><span>Quick Start</span></a></div>
         
+        <div class="toc-item" style="margin-left:10px" id="toc-item-tomlQuick"><a href="#tomlQuick"><strong>3.1</strong><span>TOML Serde</span></a></div>
+        
         <div class="toc-item" style="margin-left:0px" id="toc-item-repository"><a href="#repository"><strong>4</strong><span>Repository</span></a></div>
         
         </div>
@@ -171,6 +173,392 @@
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-toml hljs" data-lang="toml">[micronaut.application]
 name = "example"</code></pre>
+</div>
+</div>
+
+<h2 id="tomlQuick"><a class="anchor" href="#tomlQuick"></a>3.1 TOML Serde</h2>
+
+<div class='contribute-btn'>
+    <button type='button' class='btn btn-default' onclick='window.location.href="https://github.com/micronaut-projects/micronaut-toml/edit/3.0.x/src/main/docs/guide/quickStart/tomlQuick.adoc"'>
+        <i class='fa fa-pencil-square-o'></i> Improve this doc
+    </button>
+</div>
+
+
+<div id="toml-serde" class="paragraph">
+<p>The <code>toml-serde</code> module integrates <a href="https://toml.io/en/">TOML</a> with Micronaut Serialization.
+Use this module when you need to read or write TOML with <a href="../api/io/micronaut/serde/ObjectMapper.html">ObjectMapper</a>.</p>
+</div>
+<div class="paragraph">
+<p>Add the following artifact to the <code>dependencies</code> block:</p>
+</div>
+<div class="paragraph">
+<p>        <div class="listingblock multi-language-sample">
+<div class="title"></div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-kotlin hljs" data-lang="gradle">implementation(<span class="hljs-string">"io.micronaut.toml:micronaut-toml-serde")</span></code></pre>
+</div>
+</div>
+<div class="listingblock multi-language-sample">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="maven">&lt;dependency&gt;
+    &lt;groupId&gt;io.micronaut.toml&lt;/groupId&gt;
+    &lt;artifactId&gt;micronaut-toml-serde&lt;/artifactId&gt;
+&lt;/dependency&gt;</code></pre>
+</div>
+</div>
+</p>
+</div>
+<div class="paragraph">
+<p>The TOML module contributes a named mapper bean.
+Inject <code>@Named(TomlObjectMapper.NAME)</code> when an application has more than one <a href="../api/io/micronaut/serde/ObjectMapper.html">ObjectMapper</a>:</p>
+</div>
+<div class="listingblock multi-language-sample">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package example;
+
+import io.micronaut.serde.ObjectMapper;
+import io.micronaut.serde.toml.TomlObjectMapper;
+import jakarta.inject.Named;
+import jakarta.inject.Singleton;
+
+@Singleton
+final class TomlService {
+    private final ObjectMapper tomlMapper;
+
+    TomlService(@Named(TomlObjectMapper.NAME) ObjectMapper tomlMapper) {
+        this.tomlMapper = tomlMapper;
+    }
+
+    ObjectMapper tomlMapper() {
+        return tomlMapper;
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>With the correct dependencies in place you can now define an object to be serialized:</p>
+</div>
+<div class="listingblock multi-language-sample">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package example;
+
+import io.micronaut.serde.annotation.Serdeable;
+
+@Serdeable
+public class Book {
+    private final String title;
+    private final int pages;
+
+    public Book(String title, int pages) {
+        this.title = title;
+        this.pages = pages;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public int getPages() {
+        return pages;
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The type is annotated with <a href="../api/io/micronaut/serde/annotation/Serdeable.html">@Serdeable</a> to enable serialization and deserialization.
+The constructor is used to create the deserialized bean, and bean properties are written as TOML keys.</p>
+</div>
+<div class="paragraph">
+<p>Once you have a type that can be serialized and deserialized you can use the TOML <a href="../api/io/micronaut/serde/ObjectMapper.html">ObjectMapper</a> bean to do so:</p>
+</div>
+<div class="listingblock multi-language-sample">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java">package example;
+
+import io.micronaut.serde.ObjectMapper;
+import io.micronaut.serde.toml.TomlObjectMapper;
+import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
+import jakarta.inject.Named;
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+@MicronautTest
+public class BookTest {
+
+    @Test
+    void testWriteReadBook(@Named(TomlObjectMapper.NAME) ObjectMapper tomlMapper) throws IOException {
+        String result = tomlMapper.writeValueAsString(new Book("The Stand", 50));
+
+        Book book = tomlMapper.readValue(result, Book.class);
+        assertEquals("The Stand", book.getTitle());
+        assertEquals(50, book.getPages());
+    }
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The mapper also supports the generic <code>Argument&lt;T&gt;</code> overloads when the target type has generic parameters.</p>
+</div>
+<div class="sect1">
+<h2 id="_toml_mapper_configuration">TOML Mapper Configuration</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>TOML-specific mapper configuration is under <code>micronaut.serde.toml</code>.
+The available settings are:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>micronaut.serde.toml.write-features.write-layout</code> - controls serialized TOML output layout. Supported values are <code>table</code> and <code>inline</code>; the default is <code>table</code>.</p>
+</li>
+<li>
+<p><code>micronaut.serde.toml.read-constraints.max-document-size</code> - maximum TOML document size in bytes before parsing. The default is <code>1048576</code> bytes, and a non-positive value disables the limit.</p>
+</li>
+<li>
+<p><code>micronaut.serde.toml.read-constraints.max-string-length</code> - maximum string value length. The default has no TOML-specific limit.</p>
+</li>
+<li>
+<p><code>micronaut.serde.toml.read-constraints.max-number-length</code> - maximum number token length. The default uses the parser default.</p>
+</li>
+</ul>
+</div>
+<div class="openblock">
+<div class="content">
+<div class="listingblock multi-language-sample">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">micronaut.serde.toml.write-features.write-layout=table
+micronaut.serde.toml.read-constraints.max-document-size=1048576
+micronaut.serde.toml.read-constraints.max-string-length=65536
+micronaut.serde.toml.read-constraints.max-number-length=1000</code></pre>
+</div>
+</div>
+<div class="listingblock multi-language-sample">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">micronaut:
+  serde:
+    toml:
+      write-features:
+        write-layout: table
+      read-constraints:
+        max-document-size: 1048576
+        max-string-length: 65536
+        max-number-length: 1000</code></pre>
+</div>
+</div>
+<div class="listingblock multi-language-sample">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-toml hljs" data-lang="toml">[micronaut]
+  [micronaut.serde]
+    [micronaut.serde.toml]
+      [micronaut.serde.toml.write-features]
+        write-layout="table"
+      [micronaut.serde.toml.read-constraints]
+        max-document-size=1048576
+        max-string-length=65536
+        max-number-length=1000</code></pre>
+</div>
+</div>
+<div class="listingblock multi-language-sample">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-groovy-config hljs" data-lang="groovy-config">micronaut {
+  serde {
+    toml {
+      writeFeatures {
+        writeLayout = "table"
+      }
+      readConstraints {
+        maxDocumentSize = 1048576
+        maxStringLength = 65536
+        maxNumberLength = 1000
+      }
+    }
+  }
+}</code></pre>
+</div>
+</div>
+<div class="listingblock multi-language-sample">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-hocon hljs" data-lang="hocon">{
+  micronaut {
+    serde {
+      toml {
+        write-features {
+          write-layout = "table"
+        }
+        read-constraints {
+          max-document-size = 1048576
+          max-string-length = 65536
+          max-number-length = 1000
+        }
+      }
+    }
+  }
+}</code></pre>
+</div>
+</div>
+<div class="listingblock multi-language-sample">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-json-config hljs" data-lang="json-config">{
+  "micronaut": {
+    "serde": {
+      "toml": {
+        "write-features": {
+          "write-layout": "table"
+        },
+        "read-constraints": {
+          "max-document-size": 1048576,
+          "max-string-length": 65536,
+          "max-number-length": 1000
+        }
+      }
+    }
+  }
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>The general Micronaut Serialization settings under <code>micronaut.serde.*</code> still apply to the TOML mapper where relevant.
+For example, serialization inclusion settings affect empty values, while TOML text still omits <code>null</code> properties because TOML has no <code>null</code> literal.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_toml_output_layout">TOML Output Layout</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The TOML mapper writes nested object graphs in table layout by default.
+For example, a bean with an <code>author</code> property is written with a TOML table header:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-toml hljs" data-lang="toml">title = 'Micronaut in Action'
+pages = 320
+
+[author]
+name = 'Ada'</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Arrays of objects are written as arrays of tables:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-toml hljs" data-lang="toml">[[products]]
+name = 'Hammer'
+sku = 738594937
+
+[[products]]
+name = 'Nail'
+sku = 284758393</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Configure the mapper to write nested objects with TOML inline tables instead:</p>
+</div>
+<div class="openblock">
+<div class="content">
+<div class="listingblock multi-language-sample">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">micronaut.serde.toml.write-features.write-layout=inline</code></pre>
+</div>
+</div>
+<div class="listingblock multi-language-sample">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">micronaut:
+  serde:
+    toml:
+      write-features:
+        write-layout: inline</code></pre>
+</div>
+</div>
+<div class="listingblock multi-language-sample">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-toml hljs" data-lang="toml">[micronaut]
+  [micronaut.serde]
+    [micronaut.serde.toml]
+      [micronaut.serde.toml.write-features]
+        write-layout="inline"</code></pre>
+</div>
+</div>
+<div class="listingblock multi-language-sample">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-groovy-config hljs" data-lang="groovy-config">micronaut {
+  serde {
+    toml {
+      writeFeatures {
+        writeLayout = "inline"
+      }
+    }
+  }
+}</code></pre>
+</div>
+</div>
+<div class="listingblock multi-language-sample">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-hocon hljs" data-lang="hocon">{
+  micronaut {
+    serde {
+      toml {
+        write-features {
+          write-layout = "inline"
+        }
+      }
+    }
+  }
+}</code></pre>
+</div>
+</div>
+<div class="listingblock multi-language-sample">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-json-config hljs" data-lang="json-config">{
+  "micronaut": {
+    "serde": {
+      "toml": {
+        "write-features": {
+          "write-layout": "inline"
+        }
+      }
+    }
+  }
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>With inline layout, the same nested values are written as inline table values:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-toml hljs" data-lang="toml">title = 'Micronaut in Action'
+pages = 320
+author = {name = 'Ada'}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>An array of objects is written as a single inline array value:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-toml hljs" data-lang="toml">products = [{name = 'Hammer', sku = 738594937}, {name = 'Nail', sku = 284758393}]</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Set <code>micronaut.serde.toml.write-features.write-layout</code> to <code>table</code> to select the default table output explicitly.
+The write layout only controls serialization output.
+The mapper can read valid TOML that uses standard table headers, arrays of tables, inline tables, or inline arrays.</p>
+</div>
+<div class="paragraph">
+<p>TOML has no <code>null</code> literal.
+When writing TOML text, null object properties are omitted.
+The TOML mapper also expects the serialized root value to be an object, because a complete TOML document is a set of key/value pairs and tables.</p>
+</div>
 </div>
 </div>
 
