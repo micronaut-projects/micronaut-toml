@@ -101,13 +101,13 @@
         <h1>Micronaut TOML</h1>
         <p></p>
         <p>Support for the TOML configuration format for the Micronaut framework</p>
-        <p><strong>Version:</strong> 3.0.1-SNAPSHOT </p>
+        <p><strong>Version:</strong> 3.1.0-SNAPSHOT </p>
     </div>
     
 <h1 id="introduction"><a class="anchor" href="#introduction"></a>1 Introduction</h1>
 
 <div class='contribute-btn'>
-    <button type='button' class='btn btn-default' onclick='window.location.href="https://github.com/micronaut-projects/micronaut-toml/edit/3.0.x/src/main/docs/guide/introduction.adoc"'>
+    <button type='button' class='btn btn-default' onclick='window.location.href="https://github.com/micronaut-projects/micronaut-toml/edit/3.1.x/src/main/docs/guide/introduction.adoc"'>
         <i class='fa fa-pencil-square-o'></i> Improve this doc
     </button>
 </div>
@@ -123,7 +123,7 @@
 <h1 id="releaseHistory"><a class="anchor" href="#releaseHistory"></a>2 Release History</h1>
 
 <div class='contribute-btn'>
-    <button type='button' class='btn btn-default' onclick='window.location.href="https://github.com/micronaut-projects/micronaut-toml/edit/3.0.x/src/main/docs/guide/releaseHistory.adoc"'>
+    <button type='button' class='btn btn-default' onclick='window.location.href="https://github.com/micronaut-projects/micronaut-toml/edit/3.1.x/src/main/docs/guide/releaseHistory.adoc"'>
         <i class='fa fa-pencil-square-o'></i> Improve this doc
     </button>
 </div>
@@ -139,7 +139,7 @@
 <h1 id="quickStart"><a class="anchor" href="#quickStart"></a>3 Quick Start</h1>
 
 <div class='contribute-btn'>
-    <button type='button' class='btn btn-default' onclick='window.location.href="https://github.com/micronaut-projects/micronaut-toml/edit/3.0.x/src/main/docs/guide/quickStart.adoc"'>
+    <button type='button' class='btn btn-default' onclick='window.location.href="https://github.com/micronaut-projects/micronaut-toml/edit/3.1.x/src/main/docs/guide/quickStart.adoc"'>
         <i class='fa fa-pencil-square-o'></i> Improve this doc
     </button>
 </div>
@@ -179,7 +179,7 @@ name = "example"</code></pre>
 <h2 id="tomlQuick"><a class="anchor" href="#tomlQuick"></a>3.1 TOML Serde</h2>
 
 <div class='contribute-btn'>
-    <button type='button' class='btn btn-default' onclick='window.location.href="https://github.com/micronaut-projects/micronaut-toml/edit/3.0.x/src/main/docs/guide/quickStart/tomlQuick.adoc"'>
+    <button type='button' class='btn btn-default' onclick='window.location.href="https://github.com/micronaut-projects/micronaut-toml/edit/3.1.x/src/main/docs/guide/quickStart/tomlQuick.adoc"'>
         <i class='fa fa-pencil-square-o'></i> Improve this doc
     </button>
 </div>
@@ -351,15 +351,7 @@ micronaut.serde.toml.read-constraints.max-number-length=1000</code></pre>
 </div>
 <div class="listingblock multi-language-sample">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-toml hljs" data-lang="toml">[micronaut]
-  [micronaut.serde]
-    [micronaut.serde.toml]
-      [micronaut.serde.toml.write-features]
-        write-layout="table"
-      [micronaut.serde.toml.read-constraints]
-        max-document-size=1048576
-        max-string-length=65536
-        max-number-length=1000</code></pre>
+<pre class="highlightjs highlight"><code class="language-toml hljs" data-lang="toml">micronaut = {serde = {toml = {write-features = {write-layout = "table"}, read-constraints = {max-document-size = 1048576, max-string-length = 65536, max-number-length = 1000}}}}</code></pre>
 </div>
 </div>
 <div class="listingblock multi-language-sample">
@@ -479,11 +471,7 @@ sku = 284758393</code></pre>
 </div>
 <div class="listingblock multi-language-sample">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-toml hljs" data-lang="toml">[micronaut]
-  [micronaut.serde]
-    [micronaut.serde.toml]
-      [micronaut.serde.toml.write-features]
-        write-layout="inline"</code></pre>
+<pre class="highlightjs highlight"><code class="language-toml hljs" data-lang="toml">micronaut = {serde = {toml = {write-features = {write-layout = "inline"}}}}</code></pre>
 </div>
 </div>
 <div class="listingblock multi-language-sample">
@@ -565,7 +553,7 @@ The TOML mapper also expects the serialized root value to be an object, because 
 <h1 id="repository"><a class="anchor" href="#repository"></a>4 Repository</h1>
 
 <div class='contribute-btn'>
-    <button type='button' class='btn btn-default' onclick='window.location.href="https://github.com/micronaut-projects/micronaut-toml/edit/3.0.x/src/main/docs/guide/repository.adoc"'>
+    <button type='button' class='btn btn-default' onclick='window.location.href="https://github.com/micronaut-projects/micronaut-toml/edit/3.1.x/src/main/docs/guide/repository.adoc"'>
         <i class='fa fa-pencil-square-o'></i> Improve this doc
     </button>
 </div>
