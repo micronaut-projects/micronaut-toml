@@ -1,5 +1,5 @@
 [versions]
-micronaut = "5.1.6"
+micronaut = "5.1.10"
 micronaut-serde = "3.1.0"
 
 jetbrains-annotations = "26.1.0"
