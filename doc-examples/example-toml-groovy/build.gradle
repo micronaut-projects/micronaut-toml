@@ -1,0 +1,23 @@
+plugins {
+    id "groovy"
+}
+
+// The examples of the guide, in Groovy. The Groovy compiler picks up the annotation processors from the compile classpath.
+dependencies {
+    compileOnly mn.micronaut.inject.groovy
+    compileOnly libs.micronaut.serde.processor
+
+    implementation projects.micronautToml
+    implementation projects.micronautTomlSerde
+
+    runtimeOnly mnLogging.logback.classic
+
+    testCompileOnly mn.micronaut.inject.groovy
+
+    testImplementation mnTest.micronaut.test.spock
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+}
+
+test {
+    useJUnitPlatform()
+}
