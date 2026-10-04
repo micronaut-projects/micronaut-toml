@@ -163,6 +163,15 @@
 &lt;/dependency&gt;</code></pre>
 </div>
 </div>
+<div class="listingblock multi-language-sample">
+<div class="title"></div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-toml hljs" data-lang="pyronaut">[tool.pyronaut.dependencies]
+runtime = [
+    <span class="hljs-string">"io.micronaut.toml:micronaut-toml"</span>,
+]</code></pre>
+</div>
+</div>
 </p>
 </div>
 <div class="paragraph">
@@ -205,6 +214,15 @@ Use this module when you need to read or write TOML with <a href="../api/io/micr
     &lt;groupId&gt;io.micronaut.toml&lt;/groupId&gt;
     &lt;artifactId&gt;micronaut-toml-serde&lt;/artifactId&gt;
 &lt;/dependency&gt;</code></pre>
+</div>
+</div>
+<div class="listingblock multi-language-sample">
+<div class="title"></div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-toml hljs" data-lang="pyronaut">[tool.pyronaut.dependencies]
+runtime = [
+    <span class="hljs-string">"io.micronaut.toml:micronaut-toml-serde"</span>,
+]</code></pre>
 </div>
 </div>
 </p>
@@ -351,7 +369,13 @@ micronaut.serde.toml.read-constraints.max-number-length=1000</code></pre>
 </div>
 <div class="listingblock multi-language-sample">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-toml hljs" data-lang="toml">micronaut = {serde = {toml = {write-features = {write-layout = "table"}, read-constraints = {max-document-size = 1048576, max-string-length = 65536, max-number-length = 1000}}}}</code></pre>
+<pre class="highlightjs highlight"><code class="language-toml hljs" data-lang="toml">[micronaut.serde.toml.write-features]
+write-layout = "table"
+
+[micronaut.serde.toml.read-constraints]
+max-document-size = 1048576
+max-string-length = 65536
+max-number-length = 1000</code></pre>
 </div>
 </div>
 <div class="listingblock multi-language-sample">
@@ -471,7 +495,8 @@ sku = 284758393</code></pre>
 </div>
 <div class="listingblock multi-language-sample">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-toml hljs" data-lang="toml">micronaut = {serde = {toml = {write-features = {write-layout = "inline"}}}}</code></pre>
+<pre class="highlightjs highlight"><code class="language-toml hljs" data-lang="toml">[micronaut.serde.toml.write-features]
+write-layout = "inline"</code></pre>
 </div>
 </div>
 <div class="listingblock multi-language-sample">
