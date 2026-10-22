@@ -511,7 +511,7 @@ public final class Parser {
         } else if (existing instanceof TomlArrayBuilder) {
             return (TomlArrayBuilder) existing;
         } else {
-            throw errorContext.atPosition(lexer).generic("Path into existing non-array value of type " + node.getNodeType());
+            throw errorContext.atPosition(lexer).generic("Path into existing non-array value of type " + existing.getNodeType());
         }
     }
 

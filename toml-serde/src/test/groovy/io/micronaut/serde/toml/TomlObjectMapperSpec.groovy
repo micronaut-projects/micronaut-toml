@@ -334,4 +334,24 @@ userImage = 'AQIDBA=='
         Exception e = thrown()
         e.message.contains("nesting depth") || e.message.contains("Maximum depth exceeded")
     }
+
+    void "unpaired surrogates are rejected when writing #description"() {
+        when:
+        tomlMapper.writeValueAsString(value)
+
+        then:
+        def e = thrown(io.micronaut.serde.exceptions.SerdeException)
+        e.message.contains("TOML string contains unsupported characters")
+
+        where:
+        description    | value
+        "string value" | [abc: "a\uD800b"]
+        "key"          | ["a\uDC00b": 1]
+        "nested key"   | ["a\uD800": [b: 1]]
+    }
+
+    void "valid surrogate pairs are written as-is"() {
+        expect:
+        tomlMapper.writeValueAsString([abc: "a\uD83D\uDE00b"]) == "abc = 'a\uD83D\uDE00b'\n"
+    }
 }

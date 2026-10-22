@@ -17,6 +17,7 @@ package io.micronaut.serde.toml.encodestyle;
 
 import io.micronaut.core.annotation.Internal;
 import io.micronaut.json.tree.JsonNode;
+import io.micronaut.serde.exceptions.SerdeException;
 
 /**
  * Shared TOML text rendering helpers used by both table and inline output styles.
@@ -34,12 +35,13 @@ final class TomlStyleRenderer {
     private TomlStyleRenderer() {
     }
 
-    static String renderKeySegment(String key) {
-        if ((StringOutputUtil.categorize(key) & StringOutputUtil.UNQUOTED_KEY) != 0) {
+    static String renderKeySegment(String key) throws SerdeException {
+        int categories = StringOutputUtil.categorize(key);
+        if ((categories & StringOutputUtil.UNQUOTED_KEY) != 0) {
             return key;
         }
         // overlapping byte
-        return renderString(key);
+        return renderString(key, categories);
     }
 
     static boolean canRenderObjectProperty(JsonNode value) {
@@ -49,9 +51,17 @@ final class TomlStyleRenderer {
     /**
      * Reference to the <a href="https://toml.io/en/v1.0.0#string">TOML v1.0.0 String specification</a>.
      */
-    static String renderString(String value) {
-        if ((StringOutputUtil.categorize(value) & StringOutputUtil.LITERAL_STRING ) != 0) {
+    static String renderString(String value) throws SerdeException {
+        return renderString(value, StringOutputUtil.categorize(value));
+    }
+
+    private static String renderString(String value, int categories) throws SerdeException {
+        if ((categories & StringOutputUtil.LITERAL_STRING) != 0) {
             return "'" + value + "'";
+        }
+        if ((categories & StringOutputUtil.BASIC_STRING) == 0) {
+            // e.g. unpaired surrogates, which have no valid TOML representation
+            throw new SerdeException("TOML string contains unsupported characters");
         }
         return "\"" + escapeBasicString(value) + "\"";
     }
