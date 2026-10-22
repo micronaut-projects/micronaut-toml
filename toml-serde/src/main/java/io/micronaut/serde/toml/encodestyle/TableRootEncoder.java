@@ -177,7 +177,7 @@ public final class TableRootEncoder {
         return newPath;
     }
 
-    private static String renderKeyPath(List<String> path) {
+    private static String renderKeyPath(List<String> path) throws IOException {
         StringBuilder builder = new StringBuilder();
         for (int i = 0; i < path.size(); i++) {
             if (i > 0) {

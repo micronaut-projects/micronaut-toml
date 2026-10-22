@@ -905,6 +905,14 @@ public class ParserTest {
     }
 
     @Test
+    public void arrayTableOverScalar() throws IOException {
+        MatcherAssert.assertThat(
+                Assertions.assertThrows(TomlStreamReadException.class, () -> toml("fruits = \"apple\"\n" +
+                        "[[fruits]]")).getOriginalMessage(),
+                Matchers.containsString("Path into existing non-array value of type string"));
+    }
+
+    @Test
     public void points() throws IOException {
         Assertions.assertEquals(
                 json("{\"points\":  [ { \"x\":1, \"y\":2, \"z\":3 },\n" +
